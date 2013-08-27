@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xunit>
+  <assemblies>
+    <assembly filename="Scrum.Web.IntegrationTests\bin\Debug\Scrum.Web.IntegrationTests.dll" shadow-copy="true" />
+  </assemblies>
+</xunit>

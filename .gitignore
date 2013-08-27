@@ -1,0 +1,12 @@
+[Bb]in
+[Oo]bj
+[Tt]est[Rr]esults
+*.user
+*.suo
+packages
+NuGet.exe
+_[Ss]cripts
+*.exe
+*.dll
+*.nupkg
+*.bak
