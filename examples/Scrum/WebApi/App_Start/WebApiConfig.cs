@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Web.Http.OData.Batch;
 using EntityRepository.ODataServer;
 using EntityRepository.ODataServer.Util;
 using Scrum.Dal;
@@ -25,9 +26,8 @@ namespace Scrum.WebApi
 
 		public static void Register(HttpConfiguration config)
 		{
-			// REVIEW: Batch is only supported in newer web api odata
 			// Configure OData $batch
-			//config.Routes.MapHttpBatchRoute("ODataBatchRoute", ODataRoute + "/$batch", new DefaultODataBatchHandler(GlobalConfiguration.DefaultServer));
+			config.Routes.MapHttpBatchRoute("ODataBatchRoute", ODataRoute + "/$batch", new DefaultODataBatchHandler(GlobalConfiguration.DefaultServer));
 
 			// Configure OData controllers
 			var oDataServiceConfig = new ODataServiceConfig(config);

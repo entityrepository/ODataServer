@@ -9,6 +9,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity;
 using System.Data.Entity.ModelConfiguration.Conventions;
+using System.Diagnostics;
 using Scrum.Model;
 
 namespace Scrum.Dal
@@ -29,6 +30,13 @@ namespace Scrum.Dal
 
 			// By default, this is on, but should be disabled for data services server context.
 			Configuration.ValidateOnSaveEnabled = true;
+
+#if DEBUG
+			if (Debugger.IsAttached)
+			{
+				Database.Log = s => Debug.WriteLine(s);
+			}
+#endif
 
 			AttachDbEnums();
 		}
@@ -107,15 +115,13 @@ namespace Scrum.Dal
 
 			modelBuilder.Entity<WorkItemTimeLog>().HasRequired(l => l.Worker).WithMany().WillCascadeOnDelete(false);
 
-			// For the DbEnum subclasses, turn off autoincrement so IDs of 0 (or flags) can work
+			// For the DbEnum subclasses, turn off autoincrement so IDs of 0 can work
 			modelBuilder.Entity<Priority>().Property(priority => priority.ID).HasDatabaseGeneratedOption(DatabaseGeneratedOption.None);
 			modelBuilder.Entity<Status>().Property(status => status.ID).HasDatabaseGeneratedOption(DatabaseGeneratedOption.None);
 
 			// Required, since there's no way to selectively disable many-to-many cascade delete.
 			modelBuilder.Conventions.Remove<ManyToManyCascadeDeleteConvention>();
 
-			// TODO: Iterate over all entity types and set the correct default schema
-			// TODO: Iterate over all entity types and set correct key names + mappings
 		}
 
 	}

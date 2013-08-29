@@ -51,7 +51,7 @@ namespace EntityRepository.ODataServer.Util
 			Expression<Func<HttpRequestMessage, HttpResponseMessage>> expr = (request) => request.CreateResponse(HttpStatusCode.OK, default(object));
 			s_createResponseMethodDef = (expr.Body as MethodCallExpression).Method.GetGenericMethodDefinition();
 
-			//s_createSingleResultMethodDef = typeof(SingleResult).GetMethod("Create", BindingFlags.Public | BindingFlags.Static);
+			s_createSingleResultMethodDef = typeof(SingleResult).GetMethod("Create", BindingFlags.Public | BindingFlags.Static);
 		}
 
 		public static ODataPath GetODataPath(ApiController controller)
@@ -78,36 +78,35 @@ namespace EntityRepository.ODataServer.Util
 
 		public static HttpResponseMessage CreateSingleEntityResponse(this HttpRequestMessage request, IEnumerable enumerable)
 		{
-			IQueryable queryable = enumerable as IQueryable;
-			// SingleResult is only available in the prerelease web API odata
+			//IQueryable queryable = enumerable as IQueryable;
 			//if (queryable != null)
 			//{	// Use SingleResult<T>
 			//	SingleResult singleResult = s_createSingleResultMethodDef.MakeGenericMethod(queryable.ElementType).Invoke(null, new object[] { queryable }) as SingleResult;
-			//	return request.CreateResponse(HttpStatusCode.OK, singleResult);
+			//	return request.CreateResponseFromRuntimeType(HttpStatusCode.OK, singleResult);
 			//}
 			//else
 			//{
-			IEnumerator enumerator = enumerable.GetEnumerator();
-			if (!enumerator.MoveNext())
-			{
-				return request.CreateResponse(HttpStatusCode.NotFound);
-			}
-			object entity = enumerator.Current;
-			if (enumerator.MoveNext())
-			{
-				return request.CreateResponse(HttpStatusCode.InternalServerError,
-				                              new ODataError
-				                              {
-					                              Message = string.Format("More than 1 entity returned for {0}.", request.RequestUri),
-					                              MessageLanguage = UsEnglish,
-					                              ErrorCode = "Multiple entities returned for single entity method"
-				                              });
-			}
-			if (entity == null)
-			{
-				return request.CreateResponse(HttpStatusCode.NotFound);
-			}
-			return request.CreateResponseFromRuntimeType(HttpStatusCode.OK, entity);
+				IEnumerator enumerator = enumerable.GetEnumerator();
+				if (!enumerator.MoveNext())
+				{
+					return request.CreateResponse(HttpStatusCode.NotFound);
+				}
+				object entity = enumerator.Current;
+				if (enumerator.MoveNext())
+				{
+					return request.CreateResponse(HttpStatusCode.InternalServerError,
+					                              new ODataError
+					                              {
+						                              Message = string.Format("More than 1 entity returned for {0}.", request.RequestUri),
+						                              MessageLanguage = UsEnglish,
+						                              ErrorCode = "Multiple entities returned for single entity method"
+					                              });
+				}
+				if (entity == null)
+				{
+					return request.CreateResponse(HttpStatusCode.NotFound);
+				}
+				return request.CreateResponseFromRuntimeType(HttpStatusCode.OK, entity);
 			//}
 		}
 

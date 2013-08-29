@@ -6,16 +6,16 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Data.Entity.Core.Objects;
+using EntityRepository.ODataServer.Util;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
-using System.Data.Objects;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using EntityRepository.ODataServer.Util;
 
 namespace EntityRepository.ODataServer
 {

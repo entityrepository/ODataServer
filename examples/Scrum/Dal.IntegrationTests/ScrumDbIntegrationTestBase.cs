@@ -20,7 +20,7 @@ namespace Scrum.Dal.IntegrationTests
 
 		protected ScrumDbIntegrationTestBase()
 		{
-			Database.SetInitializer(new ScrumDbTestDatabaseInitializer());
+			Database.SetInitializer(new MigrateDatabaseToLatestVersion<ScrumDb, ScrumTestMigrationsConfiguration>());
 		}
 
 		public void EnsureIntegrationDatabaseExists()

@@ -1,61 +1,27 @@
-﻿// -----------------------------------------------------------------------
-// <copyright file="ScrumDbTestDatabaseInitializer.cs" company="EntityRepository Contributors" year="2013">
-// This software is part of the EntityRepository library
-// Copyright © 2012 EntityRepository Contributors
-// http://entityrepository.codeplex.org/
-// </copyright>
-// -----------------------------------------------------------------------
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Reflection;
-using System.Transactions;
 using Scrum.Model;
+
 
 namespace Scrum.Dal.IntegrationTests
 {
-
-
 	/// <summary>
-	/// <see cref="IDatabaseInitializer{TContext}"/> for an integration test instance of <see cref="ScrumDb"/>.
+	/// A standard migrations config that allows data loss during updates, and provides seed data.
 	/// </summary>
-	public class ScrumDbTestDatabaseInitializer : IDatabaseInitializer<ScrumDb>
+	public class ScrumTestMigrationsConfiguration : DbMigrationsConfiguration<ScrumDb>
 	{
 
-		// Modified from DropCreateDatabaseIfModelChanges<TContext>
-		// TODO: Move to Base.Data...
-		public void InitializeDatabase(ScrumDb context)
+		public ScrumTestMigrationsConfiguration()
 		{
-			bool flag;
-			using (new TransactionScope(TransactionScopeOption.Suppress))
-			{
-				flag = context.Database.Exists();
-			}
-
-			if (flag)
-			{
-				try
-				{
-					if (context.Database.CompatibleWithModel(true))
-					{
-						return;
-					}
-				}
-				catch (NotSupportedException /*nse*/)
-				{} // Occurs when the last call to Database.Create didn't succeed; if this happens, try creating it again.
-
-				context.Database.Delete();
-			}
-
-			context.Database.Create();
-			Seed(context);
-			context.SaveChanges();
+			AutomaticMigrationsEnabled = true;
+			AutomaticMigrationDataLossAllowed = true;
 		}
 
-		protected /*override*/ void Seed(ScrumDb scrumDb)
+		protected override void Seed(ScrumDb scrumDb)
 		{
 			// Add DbEnum-like values
 			SeedStaticReadOnlyFieldValues<Priority>(scrumDb);
@@ -82,27 +48,27 @@ namespace Scrum.Dal.IntegrationTests
 			infraProject.Areas.Add(sourceControlArea);
 
 			ProjectVersion version020 = new ProjectVersion
-			                            {
-				                            Name = "0.2.0",
-				                            ReleaseDate = new DateTime(2012, 10, 1),
-				                            IsReleased = true
-			                            };
+			{
+				Name = "0.2.0",
+				ReleaseDate = new DateTime(2012, 10, 1),
+				IsReleased = true
+			};
 			infraProject.Versions.Add(version020);
 			infraProject.Versions.Add(new ProjectVersion { Name = "0.4.0" });
 			infraProject.Versions.Add(new ProjectVersion { Name = "1.0" });
 			infraProject.Versions.Add(new ProjectVersion { Name = "Backlog" });
 
 			WorkItem item1 = new WorkItem
-			                 {
-				                 //Number = 1,
-				                 Title = "Some log entries are logged twice",
-				                 Creator = gailUser,
-				                 Created = new DateTime(2013, 1, 12),
-				                 Priority = Priority.High,
-				                 Status = Status.WorkingOn,
-				                 TimeEstimate = new TimeSpan(3, 0, 0),
-				                 Description = "In the ingestion log, some of the log rows are logged twice."
-			                 };
+			{
+				//Number = 1,
+				Title = "Some log entries are logged twice",
+				Creator = gailUser,
+				Created = new DateTime(2013, 1, 12),
+				Priority = Priority.High,
+				Status = Status.WorkingOn,
+				TimeEstimate = new TimeSpan(3, 0, 0),
+				Description = "In the ingestion log, some of the log rows are logged twice."
+			};
 			infraProject.WorkItems.Add(item1);
 			item1.AssignedTo.Add(gailUser);
 			item1.Subscribers.Add(joeUser);
@@ -139,7 +105,6 @@ namespace Scrum.Dal.IntegrationTests
 			}
 		}
 
-		// TODO: Move this to Base.Data
 		public static void SeedStaticReadOnlyFieldValues<TEntity>(DbContext dbContext) where TEntity : class
 		{
 			DbSet<TEntity> dbSet = dbContext.Set<TEntity>();

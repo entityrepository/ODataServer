@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Scrum.Model</RootNamespace>
     <AssemblyName>Scrum.Model</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <CodeContractsAssemblyMode>1</CodeContractsAssemblyMode>
@@ -117,8 +117,8 @@
     <Compile Include="ProjectArea.cs" />
     <Compile Include="ProjectVersion.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-		<Compile Include="..\..\..\src\SharedAssemblyInfo.cs" />
-		<Compile Include="Sprint.cs" />
+    <Compile Include="..\..\..\src\SharedAssemblyInfo.cs" />
+    <Compile Include="Sprint.cs" />
     <Compile Include="Status.cs" />
     <Compile Include="User.cs" />
     <Compile Include="WorkItem.cs" />

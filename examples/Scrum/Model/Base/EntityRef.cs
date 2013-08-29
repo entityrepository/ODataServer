@@ -53,17 +53,6 @@ namespace Scrum.Model.Base
 		{
 			get
 			{
-				if (Object.ReferenceEquals(_entity, null))
-				{
-					if (_isSet)
-					{
-						LoadEntity();
-					}
-					else
-					{
-						return null;
-					}
-				}
 				return _entity;
 			}
 			set
@@ -109,12 +98,6 @@ namespace Scrum.Model.Base
 					throw new InvalidOperationException(message, ex);
 				}
 			}
-		}
-
-		private void LoadEntity()
-		{
-			// Currently this does nothing
-			throw new NotImplementedException();
 		}
 
 	}

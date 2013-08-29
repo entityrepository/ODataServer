@@ -25,7 +25,11 @@ namespace EntityRepository.ODataServer
 	/// </summary>
 	/// <typeparam name="TEntity">The type associated with the exposed entity set's entity type.</typeparam>
 	/// <typeparam name="TKey">The type associated with the entity key of the exposed entity set's entity type.</typeparam>
-	//[ODataNullValue]
+	/// <remarks>
+	/// Like <see cref="System.Web.Http.OData.EntitySetController{TEntity,TKey}"/>, this base class is independent of entity framework 
+	/// concerns, so could be used for other query sources or persistence options.
+	/// </remarks>
+	[ODataNullValue]
 	public abstract class EntitySetController<TEntity, TKey> : ODataController where TEntity : class
 	{
 
@@ -50,21 +54,6 @@ namespace EntityRepository.ODataServer
 		#endregion
 
 		#region HTTP controller methods
-
-		//[Queryable(AllowedQueryOptions = AllowedQueryOptions.All, MaxExpansionDepth = 15)]
-		//public virtual IQueryable<TEntity> Get()
-		//{
-		//	return GetBaseQueryable();
-		//}
-
-		// TODO: The following two implementations don't work - see https://aspnetwebstack.codeplex.com/workitem/1073
-		//public virtual IQueryable<TEntity> Get(ODataQueryOptions<TEntity> queryOptions)
-		//{
-		//	queryOptions.Validate(QueryValidationSettings);
-
-		//	IQueryable queryApplied = queryOptions.ApplyTo(GetBaseQueryable());
-		//	return queryApplied.Cast<TEntity>();
-		//}
 
 		/// <summary>
 		/// Handles GET requests including query validation.
@@ -103,7 +92,7 @@ namespace EntityRepository.ODataServer
 			return Request.CreateSingleEntityResponse(queryOptionsApplied);
 		}
 
-		// REVIEW: This works if the previous Get method doesn't.
+		// REVIEW: This used to work, but now doesn't (web api odata rc1).  Which is fine, b/c the implementation above is better.
 		//[Queryable(AllowedQueryOptions = AllowedQueryOptions.All, MaxExpansionDepth = 15)]
 		//public virtual SingleResult<TEntity> Get([FromODataUri] TKey key)
 		//{
