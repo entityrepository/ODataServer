@@ -12,4 +12,4 @@ using System.Reflection;
 
 [assembly: AssemblyTitle("EntityRepository.ODataServer")]
 [assembly:
-	AssemblyDescription("OData service library, using Web API OData - implements OData with an extensibility model.  By default, the server is implemented from an EF DbContext.")]
+	AssemblyDescription("OData service library, using Web API OData - implements OData for an EF DbContext, and can be customized using normal Web API extension points.")]

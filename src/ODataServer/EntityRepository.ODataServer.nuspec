@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+	<metadata>
+		<id>$id$</id>
+		<version>$version$</version>
+		<title>$title$</title>
+		<authors>$author$</authors>
+		<owners>$author$</owners>
+		<projectUrl>https://entityrepository.codeplex.com/</projectUrl>
+		<licenseUrl>https://entityrepository.codeplex.com/license</licenseUrl>
+		<iconUrl>https://entityrepository.codeplex.com/favicon.ico</iconUrl>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>$description$</description>
+		<releaseNotes>Beta build: Write operations not yet supported.</releaseNotes>
+		<copyright>Copyright 2013</copyright>
+		<tags>OData EF EntityFramework</tags>
+	</metadata>
+</package>
