@@ -7,12 +7,13 @@
 // -----------------------------------------------------------------------
 
 using System.Web.Http.OData.Batch;
+using System.Web.Http.OData.Routing;
 using EntityRepository.ODataServer;
+using EntityRepository.ODataServer.EF;
+using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Util;
 using Scrum.Dal;
-using Scrum.Model;
 using Scrum.Model.Base;
-using Scrum.WebApi.Controllers;
 using System;
 using System.Web.Http;
 //using System.Web.Http.OData.Batch;
@@ -27,18 +28,26 @@ namespace Scrum.WebApi
 		public static void Register(HttpConfiguration config)
 		{
 			// Configure OData $batch
-			config.Routes.MapHttpBatchRoute("ODataBatchRoute", ODataRoute + "/$batch", new DefaultODataBatchHandler(GlobalConfiguration.DefaultServer));
+			//config.Routes.MapHttpBatchRoute("ODataBatchRoute", ODataRoute + "/$batch", new DefaultODataBatchHandler(GlobalConfiguration.DefaultServer));
+
+			// Pull the container metadata from the DI service
+			var containerMetadata = config.DependencyResolver.Resolve<IContainerMetadata<ScrumDb>>();
 
 			// Configure OData controllers
-			var oDataServiceConfig = new ODataServiceConfig(config);
+			var oDataServiceManager = new ODataServerConfigurer(config, containerMetadata);
 
-			// TODO: Remove these after testing
+			// Just to prove that regular controller classes can be added when customization is needed
 			//oDataServiceConfig.AddEntitySetController("Projects", typeof(Project), typeof(ProjectsController));
-			oDataServiceConfig.AddEntitySetController("Users", typeof(User), typeof(UsersController));
+			//oDataServiceManager.AddEntitySetController("Users", typeof(User), typeof(UsersController));
 
-			oDataServiceConfig.AddDbContextControllers<ScrumDb>(DbSetControllerSelector);
+			oDataServiceManager.AddStandardEntitySetControllers(DbSetControllerSelector);
 
-			config.Routes.MapODataRoute("ODataRoute", ODataRoute, oDataServiceConfig.BuildEdmModel(typeof(WebApiConfig).Namespace));
+			config.Routes.MapODataRoute("ODataRoute",
+			                            ODataRoute,
+			                            oDataServiceManager.BuildEdmModel(),
+			                            new DefaultODataPathHandler(),
+			                            oDataServiceManager.GetRoutingConventions(),
+			                            new DefaultODataBatchHandler(GlobalConfiguration.DefaultServer));
 		}
 
 		/// <summary>
@@ -46,20 +55,25 @@ namespace Scrum.WebApi
 		/// to create for the entity set.
 		/// </summary>
 		/// <param name="entityType"></param>
-		/// <param name="keyType"></param>
+		/// <param name="keyTypes"></param>
 		/// <param name="dbContextType"></param>
 		/// <returns></returns>
-		private static Type DbSetControllerSelector(Type entityType, Type keyType, Type dbContextType)
+		private static Type DbSetControllerSelector(Type entityType, Type[] keyTypes, Type dbContextType)
 		{
+			if (keyTypes.Length != 1)
+			{
+				throw new ArgumentException("No default controller exists that supports multiple keys.");
+			}
+
 			if (entityType.IsDerivedFromGenericType(typeof(NamedDbEnum<,>)))
 			{
 				// DbEnum -> ReadOnlyDbSetController
-				return typeof(ReadOnlyDbSetController<,,>).MakeGenericType(entityType, keyType, dbContextType);
+				return typeof(ReadOnlyDbSetController<,,>).MakeGenericType(entityType, keyTypes[0], dbContextType);
 			}
 			else
 			{
 				// Everything else -> EditDbSetController
-				return typeof(EditDbSetController<,,>).MakeGenericType(entityType, keyType, dbContextType);
+				return typeof(EditDbSetController<,,>).MakeGenericType(entityType, keyTypes[0], dbContextType);
 			}
 		}
 

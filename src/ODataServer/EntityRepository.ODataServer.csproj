@@ -148,19 +148,31 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Autofac\AutofacConfiguration.cs" />
     <Compile Include="Autofac\AutofacWebApiDependencyResolver.cs" />
     <Compile Include="Autofac\AutofacWebApiDependencyScope.cs" />
-    <Compile Include="EntityKeyHelper.cs" />
+    <Compile Include="Autofac\ODataServiceModule.cs" />
+    <Compile Include="EF\EfExtensions.cs" />
+    <Compile Include="Model\EntitySetMetadata.cs" />
+    <Compile Include="EF\DbContextMetadata.cs" />
+    <Compile Include="Model\EntityTypeMetadata.cs" />
+    <Compile Include="Util\EntityKeyFunctions.cs" />
+    <Compile Include="Model\IContainerMetadataOfT.cs" />
+    <Compile Include="Routing\EntityRepositoryControllerSelector.cs" />
     <Compile Include="EntitySetController.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Model\IContainerMetadata.cs" />
+    <Compile Include="Model\IEntitySetMetadata.cs" />
+    <Compile Include="Model\IEntityTypeMetadata.cs" />
     <Compile Include="Util\EntitySetControllerHelpers.cs" />
-    <Compile Include="ReadOnlyDbSetController.cs" />
-    <Compile Include="EditDbSetController.cs" />
-    <Compile Include="ODataServiceConfig.cs" />
+    <Compile Include="EF\ReadOnlyDbSetController.cs" />
+    <Compile Include="EF\EditDbSetController.cs" />
+    <Compile Include="ODataServerConfigurer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="..\SharedAssemblyInfo.cs" />
     <Compile Include="Util\ReflectionExtensions.cs" />
+    <Compile Include="Util\WebExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

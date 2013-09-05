@@ -90,6 +90,32 @@ namespace EntityRepository.ODataServer.Util
 			return propertyInfo.GetValue(instance, null);
 		}
 
+		public static void SetPropertyValue(this object instance, string propertyName, object value)
+		{
+			Contract.Requires<ArgumentNullException>(instance != null);
+			Contract.Requires<ArgumentNullException>(propertyName != null);
+			SetPropertyValue(instance.GetType(), instance, propertyName, value);
+		}
+
+		public static void SetPropertyValue(this Type type, object instance, string propertyName, object value)
+		{
+			Contract.Requires<ArgumentNullException>(type != null);
+			Contract.Requires<ArgumentNullException>(propertyName != null);
+			Contract.Requires<ArgumentException>(!type.IsGenericTypeDefinition);
+
+			BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.FlattenHierarchy;
+			if (instance == null)
+			{
+				bindingFlags |= BindingFlags.Static;
+			}
+			else
+			{
+				bindingFlags |= BindingFlags.Instance;
+			}
+			PropertyInfo propertyInfo = type.GetProperty(propertyName, bindingFlags);
+			propertyInfo.SetValue(instance, value);
+		}
+
 		/// <summary>
 		/// Invokes a non-generic method using reflection and the specified parameters.
 		/// </summary>
@@ -164,5 +190,82 @@ namespace EntityRepository.ODataServer.Util
 			}
 		}
 
+		/// <summary>
+		/// Copies the values of all primitive (non-navigation) properties on source to destination.
+		/// </summary>
+		/// <param name="source"></param>
+		/// <param name="destination"></param>
+		public static void CopyPublicPrimitivePropertyValues(object source, object destination)
+		{
+			Contract.Requires<ArgumentNullException>(source != null);
+			Contract.Requires<ArgumentNullException>(destination != null);
+
+			Type sourceType = source.GetType();
+			if (! Object.ReferenceEquals(sourceType, destination.GetType()))
+			{
+				throw new ArgumentException(string.Format("Source type '{0}' and destination type '{1}' must match.", sourceType.FullName, destination.GetType().FullName));
+			}
+
+			foreach (PropertyInfo property in sourceType.GetProperties(BindingFlags.GetProperty | BindingFlags.SetProperty | BindingFlags.Public | BindingFlags.Instance))
+			{
+				if (IsEdmPrimitiveType(property.GetType()))
+				{
+					object propertyValue = property.GetValue(source);
+					property.SetValue(destination, propertyValue);
+				}
+			}
+		}
+
+		/// Determines whether the given type is a primitive type or
+		/// is a <see cref="string"/>, <see cref="DateTime"/>, <see cref="Decimal"/>,
+		/// <see cref="Guid"/>, <see cref="DateTimeOffset"/> or <see cref="TimeSpan"/>.
+		
+		/// <summary>
+		/// Determines whether a type is an Edm primitive type.  Should return false for all Navigation properties.
+		/// </summary>
+		/// <param name="type"></param>
+		/// <returns></returns>
+		/// <remarks>
+		/// Edm primitive types are CLR primitie types, or  <see cref="string"/>, <see cref="DateTime"/>, <see cref="Decimal"/>,
+		/// <see cref="Guid"/>, <see cref="DateTimeOffset"/> or <see cref="TimeSpan"/>
+		/// </remarks>
+		public static bool IsEdmPrimitiveType(Type type)
+		{
+			Contract.Requires<ArgumentNullException>(type != null);
+
+			if (type.IsArray)
+			{
+				Type elementType = type.GetElementType();
+				if (ReferenceEquals(elementType, typeof(byte))
+				    || ReferenceEquals(elementType, typeof(char)))
+				{
+					return true;
+				}
+			}
+			else if (type.IsClass)
+			{
+				if (ReferenceEquals(type, typeof(string)))
+				{
+					return true;
+				}
+			}
+			else if (type.IsValueType)
+			{
+				if (type.IsPrimitive)
+				{
+					return true;
+				}
+				else if (ReferenceEquals(type, typeof(DateTime))
+					|| ReferenceEquals(type, typeof(DateTimeOffset))
+					|| ReferenceEquals(type, typeof(TimeSpan))
+					|| ReferenceEquals(type, typeof(Decimal))
+					|| ReferenceEquals(type, typeof(Guid)))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
 	}
 }

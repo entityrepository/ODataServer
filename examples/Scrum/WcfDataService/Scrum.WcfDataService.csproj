@@ -20,7 +20,6 @@
     <IISExpressWindowsAuthentication>enabled</IISExpressWindowsAuthentication>
     <IISExpressUseClassicPipelineMode>false</IISExpressUseClassicPipelineMode>
     <TargetFrameworkProfile />
-    <SilverlightApplicationList>{03458384-6E78-42F5-B208-7329C3B7E67D}|..\Silverlight\Scrum.Silverlight.csproj|ClientBin|False</SilverlightApplicationList>
     <CodeContractsAssemblyMode>1</CodeContractsAssemblyMode>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
@@ -150,7 +149,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="clientaccesspolicy.xml" />
-    <Content Include="ClientBin\Scrum.Silverlight.xap" />
     <Content Include="odata.svc" />
     <Content Include="Web.config" />
   </ItemGroup>

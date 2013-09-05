@@ -81,7 +81,7 @@ namespace EntityRepository.ODataServer.Util
 			//IQueryable queryable = enumerable as IQueryable;
 			//if (queryable != null)
 			//{	// Use SingleResult<T>
-			//	SingleResult singleResult = s_createSingleResultMethodDef.MakeGenericMethod(queryable.ElementType).Invoke(null, new object[] { queryable }) as SingleResult;
+			//	SingleResult singleResult = s_createSingleResultMethodDef.MakeGenericMethod(queryable.ElementTypeMetadata).Invoke(null, new object[] { queryable }) as SingleResult;
 			//	return request.CreateResponseFromRuntimeType(HttpStatusCode.OK, singleResult);
 			//}
 			//else

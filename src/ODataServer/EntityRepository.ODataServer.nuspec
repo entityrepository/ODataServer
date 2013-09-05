@@ -13,6 +13,6 @@
 		<description>$description$</description>
 		<releaseNotes>Beta build: Write operations not yet supported.</releaseNotes>
 		<copyright>Copyright 2013</copyright>
-		<tags>OData EF EntityFramework</tags>
+		<tags>EntityRepository Web API OData EF EntityFramework DataService WCF data services</tags>
 	</metadata>
 </package>

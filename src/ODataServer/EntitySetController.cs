@@ -8,6 +8,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -20,7 +21,7 @@ using EntityRepository.ODataServer.Util;
 namespace EntityRepository.ODataServer
 {
 	/// <summary>
-	/// Based on <see cref="System.Web.Http.OData.EntitySetController{TEntity,TKey}"/>, but pulled into this project to support modification.
+	/// Based on <see cref="System.Web.Http.OData.EntitySetController{TEntity,TKey}"/>, but pulled into this project to allow modification.
 	/// This is the synchronous version of <see cref="AsyncEntitySetController{TEntity,TKey}"/>.
 	/// </summary>
 	/// <typeparam name="TEntity">The type associated with the exposed entity set's entity type.</typeparam>
@@ -106,6 +107,8 @@ namespace EntityRepository.ODataServer
 		/// <returns>The response message to send back to the client.</returns>
 		public virtual HttpResponseMessage Post([FromBody] TEntity entity)
 		{
+			Contract.Requires<ArgumentNullException>(entity != null);
+
 			TEntity createdEntity = CreateEntity(entity);
 			TKey entityKey = GetKey(entity);
 			return EntitySetControllerHelpers.PostResponse(this, createdEntity, entityKey);
@@ -119,6 +122,8 @@ namespace EntityRepository.ODataServer
 		/// <returns>The response message to send back to the client.</returns>
 		public virtual HttpResponseMessage Put([FromODataUri] TKey key, [FromBody] TEntity update)
 		{
+			Contract.Requires<ArgumentNullException>(update != null);
+
 			TEntity updatedEntity = UpdateEntity(key, update);
 			return EntitySetControllerHelpers.PutResponse(Request, updatedEntity);
 		}
@@ -133,6 +138,8 @@ namespace EntityRepository.ODataServer
 		[SuppressMessage("Microsoft.Naming", "CA1719:ParameterNamesShouldNotMatchMemberNames", MessageId = "1#", Justification = "Patch is the action name by WebAPI convention.")]
 		public virtual HttpResponseMessage Patch([FromODataUri] TKey key, Delta<TEntity> patch)
 		{
+			Contract.Requires<ArgumentNullException>(patch != null);
+
 			TEntity patchedEntity = PatchEntity(key, patch);
 			return EntitySetControllerHelpers.PatchResponse(Request, patchedEntity);
 		}
@@ -155,6 +162,9 @@ namespace EntityRepository.ODataServer
 		[AcceptVerbs("POST", "PUT")]
 		public virtual void CreateLink([FromODataUri] TKey key, string navigationProperty, [FromBody] Uri link)
 		{
+			Contract.Requires<ArgumentNullException>(navigationProperty != null);
+			Contract.Requires<ArgumentNullException>(link != null);
+
 			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "Create Link");
 		}
 
@@ -166,6 +176,9 @@ namespace EntityRepository.ODataServer
 		/// <param name="link">The URI of the entity to remove from the navigation property.</param>
 		public virtual void DeleteLink([FromODataUri] TKey key, string navigationProperty, [FromBody] Uri link)
 		{
+			Contract.Requires<ArgumentNullException>(navigationProperty != null);
+			Contract.Requires<ArgumentNullException>(link != null);
+
 			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "DELETE Link");
 		}
 
@@ -177,6 +190,9 @@ namespace EntityRepository.ODataServer
 		/// <param name="navigationProperty">The name of the navigation property.</param>
 		public virtual void DeleteLink([FromODataUri] TKey key, string relatedKey, string navigationProperty)
 		{
+			Contract.Requires<ArgumentNullException>(relatedKey != null);
+			Contract.Requires<ArgumentNullException>(navigationProperty != null);
+
 			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "DELETE Link");
 		}
 
@@ -212,6 +228,8 @@ namespace EntityRepository.ODataServer
 		/// <returns>The entity key value</returns>
 		protected virtual TKey GetKey(TEntity entity)
 		{
+			Contract.Requires<ArgumentNullException>(entity != null);
+
 			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "GetKey(TEntity entity)");
 		}
 
@@ -232,6 +250,8 @@ namespace EntityRepository.ODataServer
 		/// <returns>The created entity.</returns>
 		protected internal virtual TEntity CreateEntity(TEntity entity)
 		{
+			Contract.Requires<ArgumentNullException>(entity != null);
+
 			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "POST");
 		}
 
@@ -243,6 +263,8 @@ namespace EntityRepository.ODataServer
 		/// <returns>The updated entity.</returns>
 		protected internal virtual TEntity UpdateEntity(TKey key, TEntity update)
 		{
+			Contract.Requires<ArgumentNullException>(update != null);
+
 			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "PUT");
 		}
 
@@ -254,6 +276,8 @@ namespace EntityRepository.ODataServer
 		/// <returns>The updated entity.</returns>
 		protected internal virtual TEntity PatchEntity(TKey key, Delta<TEntity> patch)
 		{
+			Contract.Requires<ArgumentNullException>(patch != null);
+
 			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "PATCH");
 		}
 
