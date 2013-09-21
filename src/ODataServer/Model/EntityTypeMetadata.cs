@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Reflection;
+using EntityRepository.ODataServer.Util;
 using Microsoft.Data.Edm;
 
 namespace EntityRepository.ODataServer.Model
@@ -21,16 +22,19 @@ namespace EntityRepository.ODataServer.Model
 		private readonly IEdmEntityType _edmStructuredType;
 		private readonly Type _clrType;
 		private readonly PropertyInfo[] _clrKeyProperties;
+		private readonly Func<object, object> _entityKeyFunction;
 
 		internal EntityTypeMetadata(IEdmEntityType edmStructuredType, Type clrType, PropertyInfo[] clrKeyProperties)
 		{
-			Contract.Requires<ArgumentNullException>(edmStructuredType != null);
-			Contract.Requires<ArgumentNullException>(clrType != null);
-			Contract.Requires<ArgumentNullException>(clrKeyProperties != null);
+			Contract.Assert(edmStructuredType != null);
+			Contract.Assert(clrType != null);
+			Contract.Assert(clrKeyProperties != null);
+			Contract.Assert(clrKeyProperties.Length >= 1);
 
 			_edmStructuredType = edmStructuredType;
 			_clrType = clrType;
 			_clrKeyProperties = clrKeyProperties;
+			_entityKeyFunction = GetUntypedEntityKeyFunction(this);
 		}
 
 		public Type ClrType { get { return _clrType; } }
@@ -41,14 +45,25 @@ namespace EntityRepository.ODataServer.Model
 		public IEnumerable<IEdmStructuralProperty> EdmKeyProperties { get { return _edmStructuredType.DeclaredKey; } }
 		public IEnumerable<PropertyInfo> ClrKeyProperties { get { return _clrKeyProperties; } }
 
+		public Func<object, object> EntityKeyFunction { get { return _entityKeyFunction; } } 
+
 		public PropertyInfo SingleClrKeyProperty
 		{
 			get
 			{
-				Contract.Requires<InvalidOperationException>(CountKeyProperties == 1);
+				Contract.Assert(CountKeyProperties == 1);
+
 				return _clrKeyProperties[0];
 			}
 		}
 
+		private static Func<object, object> GetUntypedEntityKeyFunction(IEntityTypeMetadata entityTypeMetadata)
+		{
+			Contract.Assert(entityTypeMetadata != null);
+
+			// Build a parameterized EntityKeyFunctions<TEntity, TKey> to obtain the key function
+			Type genericEntityKeyFunctions = typeof(EntityKeyFunctions<,>).MakeGenericType(entityTypeMetadata.ClrType, entityTypeMetadata.SingleClrKeyProperty.PropertyType);
+			return genericEntityKeyFunctions.InvokeStaticMethod("GetUntypedEntityKeyFunction", entityTypeMetadata) as Func<object, object>;
+		}
 	}
 }

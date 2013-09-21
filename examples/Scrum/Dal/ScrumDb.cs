@@ -15,9 +15,22 @@ using Scrum.Model;
 namespace Scrum.Dal
 {
 
-
+	/// <summary>
+	/// DbContext for the Scrum example.
+	/// </summary>
+	/// <remarks>
+	/// Runs against EF 6.0.0 in Scrum.Dal project; runs agains EF 5.0.0 in Scrum.WcfDataService project.
+	/// </remarks>
 	public class ScrumDb : DbContext
 	{
+
+// For EF 5.0, set a null DB initializer, so we can use the same database between EF 5 and EF 6.
+#if ! EF6
+		static ScrumDb()
+		{
+			Database.SetInitializer<ScrumDb>(null);	
+		}
+#endif
 
 		public const string DatabaseName = "Scrum";
 
@@ -31,7 +44,7 @@ namespace Scrum.Dal
 			// By default, this is on, but should be disabled for data services server context.
 			Configuration.ValidateOnSaveEnabled = true;
 
-#if DEBUG
+#if DEBUG && EF6
 			if (Debugger.IsAttached)
 			{
 				Database.Log = s => Debug.WriteLine(s);
@@ -39,6 +52,11 @@ namespace Scrum.Dal
 #endif
 
 			AttachDbEnums();
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			base.Dispose(disposing);
 		}
 
 		private void AttachDbEnums()

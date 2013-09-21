@@ -43,6 +43,24 @@ namespace EntityRepository.ODataServer.Util
 			return s_entityKeyFunc;
 		}
 
+		public static Func<object, object> GetUntypedEntityKeyFunction(IEntityTypeMetadata entityTypeMetadata)
+		{
+			Func<TEntity, TKey> entityKeyFunction = GetEntityKeyFunction(entityTypeMetadata);
+			return new Func<object, object>((object untypedEntity) =>
+			{
+				if (untypedEntity == null)
+				{
+					throw new ArgumentNullException("entity");
+				}
+				TEntity entity = untypedEntity as TEntity;
+				if (entity == null)
+				{
+					throw new ArgumentException(string.Format("Entity must be type {0}; is type {1}.", typeof(TEntity), untypedEntity.GetType()), "entity");
+				}
+				return entityKeyFunction(entity);
+			});
+		}
+
 		public static IQueryable<TEntity> QueryWhereKeyMatches(IQueryable<TEntity> queryable, TKey key, IEntityTypeMetadata entityTypeMetadata)
 		{
 			Contract.Requires<ArgumentNullException>(entityTypeMetadata != null);

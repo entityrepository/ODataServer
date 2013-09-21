@@ -10,6 +10,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
@@ -19,6 +20,7 @@ using System.Web.Http;
 using System.Web.Http.OData;
 using System.Web.Http.OData.Query;
 using System.Web.Http.OData.Routing;
+using EntityRepository.ODataServer.Model;
 using Microsoft.Data.OData;
 using Microsoft.Data.OData.Query;
 
@@ -37,7 +39,7 @@ namespace EntityRepository.ODataServer.Util
 		internal const string UsEnglish = "en-us";
 
 		/// <summary>
-		/// Holds a reference to the generic type definition for HttpRequestMessageExtensions.CreateResponse<T>()
+		/// Holds a reference to the generic type definition for <c>HttpRequestMessageExtensions.CreateResponse&lt;T&gt;()</c>.
 		/// </summary>
 		private static readonly MethodInfo s_createResponseMethodDef;
 
@@ -102,16 +104,42 @@ namespace EntityRepository.ODataServer.Util
 						                              ErrorCode = "Multiple entities returned for single entity method"
 					                              });
 				}
-				if (entity == null)
-				{
-					return request.CreateResponse(HttpStatusCode.NotFound);
-				}
 				return request.CreateResponseFromRuntimeType(HttpStatusCode.OK, entity);
 			//}
 		}
 
+		public static HttpResponseMessage CreateSingleEntityProjectedResponse<TEntity>(this HttpRequestMessage request, IEnumerable<TEntity> enumerable, Func<TEntity, object> projectionFunction)
+			where TEntity : class
+		{
+			IEnumerator<TEntity> enumerator = enumerable.GetEnumerator();
+			if (! enumerator.MoveNext())
+			{
+				return request.CreateResponse(HttpStatusCode.NotFound);
+			}
+			TEntity entity = enumerator.Current;
+			if (enumerator.MoveNext())
+			{
+				return request.CreateResponse(HttpStatusCode.InternalServerError,
+											  new ODataError
+											  {
+												  Message = string.Format("More than 1 entity returned for {0}.", request.RequestUri),
+												  MessageLanguage = UsEnglish,
+												  ErrorCode = "Multiple entities returned for single entity method"
+											  });
+			}
+			return request.CreateResponseFromRuntimeType(HttpStatusCode.OK, projectionFunction(entity));
+		}
+		
 		public static HttpResponseMessage CreateResponseFromRuntimeType(this HttpRequestMessage request, HttpStatusCode statusCode, object entity)
 		{
+			Contract.Requires<ArgumentNullException>(request != null);
+			Contract.Ensures(Contract.Result<HttpResponseMessage>() != null);
+
+			if (entity == null)
+			{
+				return request.CreateResponse(HttpStatusCode.NotFound);
+			}
+
 			Type entityType = entity.GetType();
 			return s_createResponseMethodDef.MakeGenericMethod(entityType).Invoke(null, new[] { request, statusCode, entity }) as HttpResponseMessage;
 		}
@@ -204,6 +232,15 @@ namespace EntityRepository.ODataServer.Util
 					                                  MessageLanguage = UsEnglish,
 					                                  ErrorCode = "Request not supported"
 				                                  }));
+		}
+
+		public static object GetKeyFor<TEntity>(this IContainerMetadata containerMetadata, TEntity entity)
+		{
+			Contract.Assert(containerMetadata != null);
+			Contract.Assert(entity != null);
+
+			IEntityTypeMetadata entityTypeMetadata = containerMetadata.GetEntityType(typeof(TEntity));
+			return entityTypeMetadata.EntityKeyFunction(entity);
 		}
 
 		//[SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Response disposed later")]

@@ -6,7 +6,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Web.Http.OData.Results;
+using EntityRepository.ODataServer.Model;
+using EntityRepository.ODataServer.Routing;
+using EntityRepository.ODataServer.Util;
+using Microsoft.Data.Edm;
 using System;
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -16,7 +22,6 @@ using System.Web.Http;
 using System.Web.Http.OData;
 using System.Web.Http.OData.Query;
 using System.Web.Http.OData.Routing;
-using EntityRepository.ODataServer.Util;
 
 namespace EntityRepository.ODataServer
 {
@@ -35,11 +40,21 @@ namespace EntityRepository.ODataServer
 	{
 
 		private readonly ODataValidationSettings _queryValidationSettings;
+		private readonly IEntitySetMetadata _entitySetMetadata;
 
 		#region Constructor
 
-		protected EntitySetController(ODataValidationSettings queryValidationSettings)
+		protected EntitySetController(IContainerMetadata containerMetadata, ODataValidationSettings queryValidationSettings)
 		{
+			Contract.Requires<ArgumentNullException>(containerMetadata != null);
+			Contract.Requires<ArgumentNullException>(queryValidationSettings != null);
+
+			_entitySetMetadata = containerMetadata.GetEntitySetFor(typeof(TEntity));
+			if (_entitySetMetadata == null)
+			{
+				throw new InvalidOperationException("EntitySet not found in containerMetadata for type " + typeof(TEntity));	
+			}
+
 			_queryValidationSettings = queryValidationSettings;
 		}
 
@@ -47,9 +62,30 @@ namespace EntityRepository.ODataServer
 
 		#region Properties
 
+		protected IEntitySetMetadata EntitySetMetadata
+		{
+			get { return _entitySetMetadata; }
+		}
+
+		protected IContainerMetadata ContainerMetadata
+		{
+			get { return _entitySetMetadata.ContainerMetadata; }
+		}
+
 		protected virtual ODataValidationSettings QueryValidationSettings
 		{
 			get { return _queryValidationSettings; }
+		}
+
+		/// <summary>
+		/// Gets the OData path of the current request.
+		/// </summary>
+		public ODataPath ODataPath
+		{
+			get
+			{
+				return EntitySetControllerHelpers.GetODataPath(this);
+			}
 		}
 
 		#endregion
@@ -64,6 +100,8 @@ namespace EntityRepository.ODataServer
 		[SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Get", Justification = "Needs to be this name to follow routing conventions.")]
 		public virtual HttpResponseMessage Get(ODataQueryOptions<TEntity> queryOptions)
 		{
+			Contract.Requires<ArgumentNullException>(queryOptions != null);
+
 			queryOptions.Validate(QueryValidationSettings);
 			IQueryable queryApplied = queryOptions.ApplyTo(GetBaseQueryable());
 
@@ -82,6 +120,8 @@ namespace EntityRepository.ODataServer
 		[SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Get", Justification = "Needs to be this name to follow routing conventions.")]
 		public virtual HttpResponseMessage Get([FromODataUri] TKey key, ODataQueryOptions<TEntity> queryOptions)
 		{
+			Contract.Requires<ArgumentNullException>(queryOptions != null);
+
 			queryOptions.Validate(QueryValidationSettings);
 
 			IQueryable<TEntity> query = GetEntityByKeyQuery(key);
@@ -105,13 +145,13 @@ namespace EntityRepository.ODataServer
 		/// </summary>
 		/// <param name="entity">The entity to insert into the entity set.</param>
 		/// <returns>The response message to send back to the client.</returns>
-		public virtual HttpResponseMessage Post([FromBody] TEntity entity)
+		public virtual CreatedODataResult<TEntity> Post([FromBody] TEntity entity)
 		{
 			Contract.Requires<ArgumentNullException>(entity != null);
 
 			TEntity createdEntity = CreateEntity(entity);
-			TKey entityKey = GetKey(entity);
-			return EntitySetControllerHelpers.PostResponse(this, createdEntity, entityKey);
+
+			return Created(createdEntity);
 		}
 
 		/// <summary>
@@ -120,12 +160,13 @@ namespace EntityRepository.ODataServer
 		/// <param name="key">The entity key of the entity to replace.</param>
 		/// <param name="update">The updated entity.</param>
 		/// <returns>The response message to send back to the client.</returns>
-		public virtual HttpResponseMessage Put([FromODataUri] TKey key, [FromBody] TEntity update)
+		public virtual UpdatedODataResult<TEntity> Put([FromODataUri] TKey key, [FromBody] TEntity update)
 		{
 			Contract.Requires<ArgumentNullException>(update != null);
 
 			TEntity updatedEntity = UpdateEntity(key, update);
-			return EntitySetControllerHelpers.PutResponse(Request, updatedEntity);
+
+			return Updated(updatedEntity);
 		}
 
 		/// <summary>
@@ -162,7 +203,7 @@ namespace EntityRepository.ODataServer
 		[AcceptVerbs("POST", "PUT")]
 		public virtual void CreateLink([FromODataUri] TKey key, string navigationProperty, [FromBody] Uri link)
 		{
-			Contract.Requires<ArgumentNullException>(navigationProperty != null);
+			Contract.Requires<ArgumentException>(! string.IsNullOrWhiteSpace(navigationProperty));
 			Contract.Requires<ArgumentNullException>(link != null);
 
 			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "Create Link");
@@ -176,7 +217,7 @@ namespace EntityRepository.ODataServer
 		/// <param name="link">The URI of the entity to remove from the navigation property.</param>
 		public virtual void DeleteLink([FromODataUri] TKey key, string navigationProperty, [FromBody] Uri link)
 		{
-			Contract.Requires<ArgumentNullException>(navigationProperty != null);
+			Contract.Requires<ArgumentException>(! string.IsNullOrWhiteSpace(navigationProperty));
 			Contract.Requires<ArgumentNullException>(link != null);
 
 			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "DELETE Link");
@@ -191,9 +232,54 @@ namespace EntityRepository.ODataServer
 		public virtual void DeleteLink([FromODataUri] TKey key, string relatedKey, string navigationProperty)
 		{
 			Contract.Requires<ArgumentNullException>(relatedKey != null);
-			Contract.Requires<ArgumentNullException>(navigationProperty != null);
+			Contract.Requires<ArgumentException>(! string.IsNullOrWhiteSpace(navigationProperty));
 
 			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "DELETE Link");
+		}
+
+		/// <summary>
+		/// Handles GET requests on navigation properties.
+		/// </summary>
+		/// <typeparam name="TProperty"></typeparam>
+		/// <param name="key"></param>
+		/// <param name="navigationProperty"></param>
+		/// <param name="queryOptions"></param>
+		/// <returns></returns>
+		public virtual HttpResponseMessage GetNavigationProperty<TProperty>([FromODataUri] TKey key, string navigationProperty, ODataQueryOptions<TProperty> queryOptions)
+			where TProperty : class
+		{
+			Contract.Requires<ArgumentException>(! string.IsNullOrWhiteSpace(navigationProperty));
+			Contract.Requires<ArgumentNullException>(queryOptions != null);
+
+			queryOptions.Validate(QueryValidationSettings);
+
+			IEdmNavigationProperty edmNavigationProperty = GenericPropertyRoutingConvention.GetNavigationProperty(ODataPath);
+			Contract.Assert(navigationProperty == edmNavigationProperty.Name);
+
+			IQueryable<TEntity> query = GetEntityWithNavigationPropertyQuery<TProperty>(key, edmNavigationProperty);
+
+			// TODO: Make this work to support $expand on GET navigation property
+			//IQueryable<TProperty> query = GetKeyBasedNavigationPropertyQuery(key, navigationProperty, edmNavigationProperty);
+			//IQueryable queryOptionsApplied = queryOptions.ApplyTo(query);
+
+			return Request.CreateSingleEntityProjectedResponse(query, entity => entity.GetPropertyValue(navigationProperty));
+		}
+
+		/// <summary>
+		/// Handles POST requests on navigation properties.
+		/// </summary>
+		/// <typeparam name="TProperty"></typeparam>
+		/// <param name="key"></param>
+		/// <param name="navigationProperty"></param>
+		/// <param name="propertyEntity"></param>
+		/// <returns></returns>
+		public virtual CreatedODataResult<TProperty> PostNavigationProperty<TProperty>([FromODataUri] TKey key, string navigationProperty, [FromBody] TProperty propertyEntity)
+			where TProperty : class
+		{
+			Contract.Requires<ArgumentNullException>(navigationProperty != null);
+			Contract.Requires<ArgumentNullException>(propertyEntity != null);
+
+			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "POST NavigationProperty");
 		}
 
 		/// <summary>
@@ -279,6 +365,22 @@ namespace EntityRepository.ODataServer
 			Contract.Requires<ArgumentNullException>(patch != null);
 
 			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "PATCH");
+		}
+
+		/// <summary>
+		/// Override this method to implement reading navigation properties for the entity identified by <paramref name="key"/>.
+		/// The returned query should lookup the <typeparamref name="TEntity"/> by <paramref name="key"/>, and include
+		/// the navigation property identified by <paramref name="edmNavigationProperty"/>.
+		/// </summary>
+		/// <typeparam name="TProperty"></typeparam>
+		/// <param name="key">The key identifying the entity in the current entityset.</param>
+		/// <param name="edmNavigationProperty">The <see cref="IEdmNavigationProperty"/> of the entity navigation property.</param>
+		protected virtual IQueryable<TEntity> GetEntityWithNavigationPropertyQuery<TProperty>(TKey key, IEdmNavigationProperty edmNavigationProperty)
+			where TProperty : class
+		{
+			Contract.Requires<ArgumentNullException>(edmNavigationProperty != null);
+
+			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "GET NavigationProperty " + edmNavigationProperty.Name);
 		}
 
 		#endregion

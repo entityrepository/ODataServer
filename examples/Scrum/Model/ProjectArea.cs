@@ -36,7 +36,7 @@ namespace Scrum.Model
 		}
 
 		[Required]
-		public virtual Project Project { get; protected set; }
+		public virtual Project Project { get; set; }
 
 	}
 }

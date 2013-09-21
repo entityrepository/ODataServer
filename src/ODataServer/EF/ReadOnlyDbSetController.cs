@@ -6,13 +6,16 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using EntityRepository.ODataServer.Model;
+using EntityRepository.ODataServer.Util;
+using Microsoft.Data.Edm;
 using System;
 using System.Data.Entity;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Net.Http;
 using System.Web.Http.OData.Query;
-using EntityRepository.ODataServer.Model;
-using EntityRepository.ODataServer.Util;
+using System.Web.Http.OData.Routing;
 
 namespace EntityRepository.ODataServer.EF
 {
@@ -28,20 +31,18 @@ namespace EntityRepository.ODataServer.EF
 	{
 
 		private readonly Lazy<TDbContext> _lazyDb;
-		//private readonly EntityKeyHelper<TDbContext> _entityKeyHelper;
-		private readonly IEntitySetMetadata _entitySetMetadata;
 
 		public ReadOnlyDbSetController(Lazy<TDbContext> lazyDbContext, IContainerMetadata<TDbContext> containerMetadata, ODataValidationSettings queryValidationSettings)
-			: base(queryValidationSettings)
+			: base(containerMetadata, queryValidationSettings)
 		{
 			Contract.Requires<ArgumentNullException>(lazyDbContext != null);
-			Contract.Requires<ArgumentNullException>(containerMetadata != null);
-			Contract.Requires<ArgumentNullException>(queryValidationSettings != null);
 
 			_lazyDb = lazyDbContext;
+		}
 
-			_entitySetMetadata = containerMetadata.GetEntitySetFor(typeof(TEntity));
-			//_entityKeyHelper = entityKeyHelper;
+		protected bool IsDbCreated
+		{
+			get { return _lazyDb.IsValueCreated; }	
 		}
 
 		protected TDbContext Db
@@ -56,7 +57,7 @@ namespace EntityRepository.ODataServer.EF
 
 		protected override TKey GetKey(TEntity entity)
 		{
-			Func<TEntity, TKey> entityKeyFunc = EntityKeyFunctions<TEntity, TKey>.GetEntityKeyFunction(_entitySetMetadata.ElementTypeMetadata);
+			Func<TEntity, TKey> entityKeyFunc = EntityKeyFunctions<TEntity, TKey>.GetEntityKeyFunction(EntitySetMetadata.ElementTypeMetadata);
 			return entityKeyFunc(entity);
 		}
 
@@ -68,10 +69,15 @@ namespace EntityRepository.ODataServer.EF
 
 		protected override IQueryable<TEntity> GetEntityByKeyQuery(TKey key)
 		{
-			return EntityKeyFunctions<TEntity, TKey>.QueryWhereKeyMatches(GetBaseQueryable(), key, _entitySetMetadata.ElementTypeMetadata);
+			return EntityKeyFunctions<TEntity, TKey>.QueryWhereKeyMatches(GetBaseQueryable(), key, EntitySetMetadata.ElementTypeMetadata);
 		}
 
-		public override System.Net.Http.HttpResponseMessage HandleUnmappedRequest(System.Web.Http.OData.Routing.ODataPath odataPath)
+		protected override IQueryable<TEntity> GetEntityWithNavigationPropertyQuery<TProperty>(TKey key, IEdmNavigationProperty edmNavigationProperty)
+		{
+			return GetEntityByKeyQuery(key).Include(edmNavigationProperty.Name);
+		}
+
+		public override HttpResponseMessage HandleUnmappedRequest(ODataPath odataPath)
 		{
 			return base.HandleUnmappedRequest(odataPath);
 		}

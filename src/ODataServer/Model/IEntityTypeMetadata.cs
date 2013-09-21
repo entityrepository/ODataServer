@@ -27,6 +27,8 @@ namespace EntityRepository.ODataServer.Model
 		IEnumerable<IEdmStructuralProperty> EdmKeyProperties { get; }
 		IEnumerable<PropertyInfo> ClrKeyProperties { get; }
 
+		Func<object, object> EntityKeyFunction { get; }
+
 		PropertyInfo SingleClrKeyProperty { get; }
 	}
 }

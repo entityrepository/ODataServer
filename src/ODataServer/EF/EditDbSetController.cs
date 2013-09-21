@@ -6,16 +6,19 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Diagnostics.Contracts;
+using System.Web.Http.OData.Results;
+using EntityRepository.ODataServer.Model;
+using EntityRepository.ODataServer.Routing;
+using EntityRepository.ODataServer.Util;
 using System;
 using System.Data.Entity;
-using System.Diagnostics.Contracts;
+using System.Net;
 using System.Net.Http;
-using System.Web.Http;
 using System.Web.Http.OData;
 using System.Web.Http.OData.Query;
 using System.Web.Http.OData.Routing;
-using EntityRepository.ODataServer.Model;
-using EntityRepository.ODataServer.Util;
+using Microsoft.Data.Edm;
 
 namespace EntityRepository.ODataServer.EF
 {
@@ -37,45 +40,62 @@ namespace EntityRepository.ODataServer.EF
 			: base(lazyDbContext, containerMetadata, queryValidationSettings)
 		{}
 
-		private void SaveChanges()
+		protected override void Dispose(bool disposing)
 		{
-			// TODO: Figure out how to delay SaveChanges during batch operations, so a single SaveChanges() can be used.
-			Db.SaveChanges();
+			base.Dispose(disposing);
 		}
-
-		#region Additional request formats
 
 		/// <summary>
-		/// Handles POST requests that create new entities in the entity set.
+		/// SaveChanges() is called after a changeset has been applied, using <see cref="ChangeSetExtensions.OnChangeSetSuccess(System.Web.Http.OData.ODataController,System.Action)"/>.
 		/// </summary>
-		/// <param name="entity">The entity to insert into the entity set.</param>
-		/// <returns>The response message to send back to the client.</returns>
-		public virtual HttpResponseMessage PostNavigation<TChildEntity>([FromODataUri] TKey key, [FromODataUri] string navigation, [FromBody] TChildEntity childEntity)
-			where TChildEntity : class
+		private void SaveChanges()
 		{
-			Contract.Requires<ArgumentException>(! string.IsNullOrWhiteSpace(navigation));
-			Contract.Requires<ArgumentNullException>(childEntity != null);
-
-			TEntity original = DbSet.Find(key);
-			if (original == null)
+			if (! IsDbCreated)
 			{
-				string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
-				throw new ArgumentException(error, "key");
+				return;
 			}
 
-			original.SetPropertyValue(navigation, childEntity);
 
-			return EntitySetControllerHelpers.PostResponse<TChildEntity, object>(this, childEntity, null);
+			TDbContext dbContext = Db;
+			if (dbContext.ChangeTracker.HasChanges())
+			{
+				dbContext.SaveChanges();
+			}
 		}
 
-		#endregion
+		//#region Additional request formats
+
+		///// <summary>
+		///// Handles POST requests that create new entities in the entity set.
+		///// </summary>
+		///// <param name="entity">The entity to insert into the entity set.</param>
+		///// <returns>The response message to send back to the client.</returns>
+		//public virtual HttpResponseMessage PostNavigationProperty<TChildEntity>([FromODataUri] TKey key, [FromODataUri] string navigation, [FromBody] TChildEntity childEntity)
+		//	where TChildEntity : class
+		//{
+		//	Contract.Requires<ArgumentException>(! string.IsNullOrWhiteSpace(navigation));
+		//	Contract.Requires<ArgumentNullException>(childEntity != null);
+
+		//	TEntity original = DbSet.Find(key);
+		//	if (original == null)
+		//	{
+		//		string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
+		//		throw new ArgumentException(error, "key");
+		//	}
+
+		//	original.SetPropertyValue(navigation, childEntity);
+
+		//	return EntitySetControllerHelpers.PostResponse<TChildEntity, object>(this, childEntity, null);
+		//}
+
+		//#endregion
 		#region Support for Create-Update-Delete operations on entities
 
 		protected internal override TEntity CreateEntity(TEntity entity)
 		{
 			DbSet.Add(entity);
 
-			SaveChanges();
+			this.OnChangeSetSuccess(SaveChanges);
 			return entity;
 		}
 
@@ -91,7 +111,7 @@ namespace EntityRepository.ODataServer.EF
 			// Apply changes
 			ReflectionExtensions.CopyPublicPrimitivePropertyValues(update, original);
 
-			SaveChanges();
+			this.OnChangeSetSuccess(SaveChanges);
 			return original;
 		}
 
@@ -107,7 +127,7 @@ namespace EntityRepository.ODataServer.EF
 			// Apply changes
 			patch.CopyChangedValues(entity);
 
-			SaveChanges();
+			this.OnChangeSetSuccess(SaveChanges);
 			return entity;
 		}
 
@@ -123,7 +143,38 @@ namespace EntityRepository.ODataServer.EF
 			}
 
 			DbSet.Remove(entity);
-			SaveChanges();
+
+			this.OnChangeSetSuccess(SaveChanges);
+		}
+
+		#endregion
+		#region Navigation properties
+
+		public override CreatedODataResult<TProperty> PostNavigationProperty<TProperty>(TKey key, string navigationProperty, TProperty propertyEntity)
+		{
+			TEntity entity = DbSet.Find(key);
+			if (entity == null)
+			{
+				string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
+				throw new ArgumentException(error, "key");
+			}
+
+			IEdmNavigationProperty edmNavigationProperty = GenericPropertyRoutingConvention.GetNavigationProperty(ODataPath);
+			Contract.Assert(navigationProperty == edmNavigationProperty.Name);
+
+			if (edmNavigationProperty.Type.IsCollection())
+			{
+				object propertyCollection = entity.GetPropertyValue(navigationProperty);
+				propertyCollection.InvokeMethod("Add", propertyEntity);
+			}
+			else
+			{
+				entity.SetPropertyValue(navigationProperty, propertyEntity);
+			}
+
+			this.OnChangeSetSuccess(SaveChanges);
+
+			return Created(propertyEntity);
 		}
 
 		#endregion

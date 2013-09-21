@@ -8,6 +8,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using Microsoft.Data.Edm;
 
 namespace EntityRepository.ODataServer.Model
@@ -21,5 +22,6 @@ namespace EntityRepository.ODataServer.Model
 		string Name { get; }
 		IEdmEntitySet EdmEntitySet { get; }
 		IEntityTypeMetadata ElementTypeMetadata { get; }
+		IEnumerable<IEntityTypeMetadata> ElementTypeHierarchyMetadata { get; }
 	}
 }

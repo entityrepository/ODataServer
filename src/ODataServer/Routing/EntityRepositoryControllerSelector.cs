@@ -25,7 +25,7 @@ namespace EntityRepository.ODataServer.Routing
 		internal const string ControllerKey = "controller";
 
 		/// <summary>
-		/// Installs a <see cref="EntityRepositoryControllerSelector"/> as the top level <see cref="IHttpControllerSelector"/> in <paramref name="webApiConfig"/>.
+		/// Installs an <see cref="EntityRepositoryControllerSelector"/> as the top level <see cref="IHttpControllerSelector"/> in <paramref name="webApiConfig"/>.
 		/// </summary>
 		/// <param name="webApiConfig"></param>
 		/// <param name="oDataServerConfigurer"></param>
@@ -35,7 +35,7 @@ namespace EntityRepository.ODataServer.Routing
 			Contract.Requires<ArgumentNullException>(webApiConfig != null);
 			Contract.Requires<ArgumentNullException>(oDataServerConfigurer != null);
 
-			var instance = new EntityRepositoryControllerSelector(webApiConfig, oDataServerConfigurer);
+			var instance = new EntityRepositoryControllerSelector(webApiConfig.Services, oDataServerConfigurer);
 			if (instance._fallbackControllerSelector is EntityRepositoryControllerSelector)
 			{
 				// Skip duplicate installation
@@ -51,9 +51,9 @@ namespace EntityRepository.ODataServer.Routing
 		// Mapping of controller names (which == EntitySet names) to controller descriptors
 		private readonly Dictionary<string, HttpControllerDescriptor> _managedControllers;
 
-		private EntityRepositoryControllerSelector(HttpConfiguration webApiConfig, ODataServerConfigurer oDataServerConfigurer)
+		private EntityRepositoryControllerSelector(ServicesContainer servicesContainer, ODataServerConfigurer oDataServerConfigurer)
 		{
-			_fallbackControllerSelector = webApiConfig.Services.GetHttpControllerSelector();
+			_fallbackControllerSelector = servicesContainer.GetHttpControllerSelector();
 			_managedControllers = new Dictionary<string, HttpControllerDescriptor>(ODataServerConfigurer.InitialEntitySetCapacity, StringComparer.OrdinalIgnoreCase);
 		}
 

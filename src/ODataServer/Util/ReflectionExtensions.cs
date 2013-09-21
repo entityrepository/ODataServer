@@ -71,6 +71,14 @@ namespace EntityRepository.ODataServer.Util
 			throw new NotImplementedException();
 		}
 
+		public static object GetPropertyValue(this object instance, string propertyName)
+		{
+			Contract.Requires<ArgumentNullException>(instance != null);
+			Contract.Requires<ArgumentNullException>(propertyName != null);
+
+			return GetPropertyValue(instance.GetType(), instance, propertyName);
+		}
+
 		public static object GetPropertyValue(this Type type, object instance, string propertyName)
 		{
 			Contract.Requires<ArgumentNullException>(type != null);
@@ -94,6 +102,7 @@ namespace EntityRepository.ODataServer.Util
 		{
 			Contract.Requires<ArgumentNullException>(instance != null);
 			Contract.Requires<ArgumentNullException>(propertyName != null);
+
 			SetPropertyValue(instance.GetType(), instance, propertyName, value);
 		}
 
@@ -124,7 +133,7 @@ namespace EntityRepository.ODataServer.Util
 		/// <param name="methodName"></param>
 		/// <param name="arguments"></param>
 		/// <returns></returns>
-		public static object InvokeMethod(this Type type, object instance, string methodName, params object[] arguments)
+		internal static object InternalInvokeMethod(Type type, object instance, string methodName, params object[] arguments)
 		{
 			Contract.Requires<ArgumentNullException>(type != null);
 			Contract.Requires<ArgumentNullException>(methodName != null);
@@ -140,7 +149,42 @@ namespace EntityRepository.ODataServer.Util
 				bindingFlags |= BindingFlags.Instance;
 			}
 			MethodInfo methodInfo = type.GetMethod(methodName, bindingFlags);
+			if (methodInfo == null)
+			{
+				throw new ArgumentException(string.Format("Public method named {0} not found on type {1}", methodName, type), "methodName");
+			}
 			return methodInfo.Invoke(instance, arguments);
+		}
+
+		/// <summary>
+		/// Invokes a non-generic method using reflection and the specified parameters.
+		/// </summary>
+		/// <param name="instance"></param>
+		/// <param name="methodName"></param>
+		/// <param name="arguments"></param>
+		/// <returns></returns>
+		public static object InvokeMethod(this object instance, string methodName, params object[] arguments)
+		{
+			Contract.Requires<ArgumentNullException>(instance != null);
+			Contract.Requires<ArgumentNullException>(methodName != null);
+
+			return InternalInvokeMethod(instance.GetType(), instance, methodName, arguments);
+		}
+
+		/// <summary>
+		/// Invokes a non-generic static method using reflection and the specified parameters.
+		/// </summary>
+		/// <param name="type"></param>
+		/// <param name="methodName"></param>
+		/// <param name="arguments"></param>
+		/// <returns></returns>
+		public static object InvokeStaticMethod(this Type type, string methodName, params object[] arguments)
+		{
+			Contract.Requires<ArgumentNullException>(type != null);
+			Contract.Requires<ArgumentNullException>(methodName != null);
+			Contract.Requires<ArgumentException>(!type.IsGenericTypeDefinition);
+
+			return InternalInvokeMethod(type, null, methodName, arguments);
 		}
 
 		/// <summary>
@@ -177,6 +221,10 @@ namespace EntityRepository.ODataServer.Util
 					                                         && (mi.GetParameters().Length == arguments.Length))
 					    .Select(mi => mi.MakeGenericMethod(genericMethodParameters))
 					    .First();
+				if (methodInfo == null)
+				{
+					throw new ArgumentException(string.Format("Public method named {0} not found on type {1}", methodName, type), "methodName");
+				}
 				return methodInfo.Invoke(instance, arguments);
 			}
 			catch (InvalidOperationException excp)

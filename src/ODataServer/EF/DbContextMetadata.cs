@@ -53,43 +53,31 @@ namespace EntityRepository.ODataServer.EF
 
 		public IEntityTypeMetadata GetEntityType(Type clrType)
 		{
-			Contract.Requires<ArgumentNullException>(clrType != null);
-
 			return _entityTypes.SingleOrDefault(et => et.ClrType == clrType);
 		}
 
 		public IEntityTypeMetadata GetEntityType(IEdmStructuredType edmEntityType)
 		{
-			Contract.Requires<ArgumentNullException>(edmEntityType != null);
-
 			return _entityTypes.SingleOrDefault(et => et.EdmType.IsEquivalentTo(edmEntityType));
 		}
 
 		public IEntitySetMetadata GetEntitySet(string entitySetName)
 		{
-			Contract.Requires<ArgumentException>(! string.IsNullOrWhiteSpace(entitySetName));
-
 			return _entitySets.SingleOrDefault(es => string.Equals(es.Name, entitySetName, StringComparison.Ordinal));
 		}
 
 		public IEntitySetMetadata GetEntitySetFor(Type clrType)
 		{
-			Contract.Requires<ArgumentNullException>(clrType != null);
-
 			return _entitySets.SingleOrDefault(es => es.ElementTypeMetadata.ClrType == clrType);
 		}
 
 		public IEntitySetMetadata GetEntitySetFor(IEntityTypeMetadata entityTypeMetadata)
 		{
-			Contract.Requires<ArgumentNullException>(entityTypeMetadata != null);
-
 			return _entitySets.SingleOrDefault(es => es.ElementTypeMetadata.ClrType == entityTypeMetadata.ClrType);
 		}
 
 		public IEntitySetMetadata GetEntitySetFor(IEdmStructuredType edmEntityType)
 		{
-			Contract.Requires<ArgumentNullException>(edmEntityType != null);
-
 			return _entitySets.SingleOrDefault(es => es.EdmEntitySet.ElementType.IsEquivalentTo(edmEntityType));
 		}
 
@@ -143,10 +131,33 @@ namespace EntityRepository.ODataServer.EF
 			List<IEntitySetMetadata> entitySetsList = new List<IEntitySetMetadata>();
 			foreach (IEdmEntitySet edmEntitySet in EdmContainer.EntitySets())
 			{
-				var entityTypeMetadata = entityTypesMetadata.Single(m => m.EdmType == edmEntitySet.ElementType);
-				entitySetsList.Add(new EntitySetMetadata(this, edmEntitySet, entityTypeMetadata));
+				var elementTypeMetadata = entityTypesMetadata.Single(m => m.EdmType == edmEntitySet.ElementType);
+				var elementTypeHierarchy = FindTypeHierarchyFrom(elementTypeMetadata, entityTypesMetadata);
+				entitySetsList.Add(new EntitySetMetadata(this, edmEntitySet, elementTypeMetadata, elementTypeHierarchy));
 			}
 			entitySetsMetadata = entitySetsList.ToArray();
+		}
+
+		private IEntityTypeMetadata[] FindTypeHierarchyFrom(IEntityTypeMetadata root, IEntityTypeMetadata[] allEntityTypes)
+		{
+			ISet<Type> typeHierarchy = new HashSet<Type> { root.ClrType };
+			bool newTypesAdded = true;
+
+			// Keep looping until no more elements are found with parents in typeHierarchy
+			while (newTypesAdded)
+			{
+				newTypesAdded = false;
+				// Find types in allEntityTypes that are directly derived from types in typeHierarchy, but which are not in the typeHierarchy set; then add them
+				var newDerivedTypes = allEntityTypes.Where(entityTypeMetadata => !typeHierarchy.Contains(entityTypeMetadata.ClrType) && typeHierarchy.Contains(entityTypeMetadata.ClrType.BaseType))
+					.Select(entityTypeMetadata => entityTypeMetadata.ClrType);
+				foreach (var derivedType in newDerivedTypes)
+				{
+					newTypesAdded = true; // Loop again
+					typeHierarchy.Add(derivedType);
+				}
+			}
+
+			return allEntityTypes.Where(entityTypeMetadata => typeHierarchy.Contains(entityTypeMetadata.ClrType)).ToArray();
 		}
 
 	}

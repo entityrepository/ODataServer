@@ -16,7 +16,6 @@ using Scrum.Dal;
 using Scrum.Model.Base;
 using System;
 using System.Web.Http;
-//using System.Web.Http.OData.Batch;
 
 namespace Scrum.WebApi
 {
@@ -27,9 +26,6 @@ namespace Scrum.WebApi
 
 		public static void Register(HttpConfiguration config)
 		{
-			// Configure OData $batch
-			//config.Routes.MapHttpBatchRoute("ODataBatchRoute", ODataRoute + "/$batch", new DefaultODataBatchHandler(GlobalConfiguration.DefaultServer));
-
 			// Pull the container metadata from the DI service
 			var containerMetadata = config.DependencyResolver.Resolve<IContainerMetadata<ScrumDb>>();
 
@@ -41,13 +37,7 @@ namespace Scrum.WebApi
 			//oDataServiceManager.AddEntitySetController("Users", typeof(User), typeof(UsersController));
 
 			oDataServiceManager.AddStandardEntitySetControllers(DbSetControllerSelector);
-
-			config.Routes.MapODataRoute("ODataRoute",
-			                            ODataRoute,
-			                            oDataServiceManager.BuildEdmModel(),
-			                            new DefaultODataPathHandler(),
-			                            oDataServiceManager.GetRoutingConventions(),
-			                            new DefaultODataBatchHandler(GlobalConfiguration.DefaultServer));
+			oDataServiceManager.ConfigureODataRoutes(config.Routes, "ODataRoute", ODataRoute, GlobalConfiguration.DefaultServer);
 		}
 
 		/// <summary>

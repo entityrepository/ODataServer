@@ -6,6 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading;
+using System.Web.Http.OData.Batch;
+using System.Web.Http.OData.Routing;
+using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.EF;
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Routing;
@@ -74,7 +78,15 @@ namespace EntityRepository.ODataServer
 				throw new ArgumentException(string.Format("EntitySet named '{0}' should have type {1}; {2} was passed in.", entitySetName, entitySetMetadata.ElementTypeMetadata.ClrType, entityType));
 			}
 
-			_controllerSelector.AddController(entitySetName, new HttpControllerDescriptor(_webApiConfig, entitySetName, controllerType));
+			// HACK: But I don't see a better way.
+			// Store the _containerMetadata in a threadlocal, so it can be used by UseEntityRepositoryActionSelectorAttribute.Initialize().
+			RoutingExtensions.InitializingContainerMetadata.Value = _containerMetadata;
+
+			var controllerDescriptor = new HttpControllerDescriptor(_webApiConfig, entitySetName, controllerType);
+			controllerDescriptor.CacheContainerMetadata(_containerMetadata);
+			_controllerSelector.AddController(entitySetName, controllerDescriptor);
+
+			RoutingExtensions.InitializingContainerMetadata.Value = null;
 		}
 
 		/// <summary>
@@ -145,42 +157,23 @@ namespace EntityRepository.ODataServer
 			}
 		}
 
-		//public void AddDbContextControllers<TDbContext>(ControllerTypeSelector controllerTypeSelector)
-		//	where TDbContext : DbContext
-		//{
-		//	Contract.Requires<ArgumentNullException>(controllerTypeSelector != null);
+		/// <summary>
+		/// Configure the OData routes to use the functionality provided in this library.
+		/// </summary>
+		/// <param name="routes"></param>
+		/// <param name="routeName"></param>
+		/// <param name="routePrefix"></param>
+		/// <param name="httpServer"></param>
+		public void ConfigureODataRoutes(HttpRouteCollection routes, string routeName, string routePrefix, HttpServer httpServer)
+		{
+			routes.MapODataRoute(routeName,
+			                     routePrefix,
+			                     BuildEdmModel(),
+			                     new DefaultODataPathHandler(),
+			                     GetRoutingConventions(),
+			                     new ODataServerBatchHandler(httpServer));
+		}
 
-		//	// All existing controllers are defined in the fallback controller
-		//	IDictionary<string, HttpControllerDescriptor> existingControllers = _controllerSelector.GetFallbackControllerMapping();
-
-		//	// TDbContext and EntityKeyHelper must be registered with the DI container
-		//	Type dbContextType = typeof(TDbContext);
-		//	EntityKeyHelper<TDbContext> entityKeyHelper = (EntityKeyHelper<TDbContext>) _webApiConfig.DependencyResolver.GetService(typeof(EntityKeyHelper<TDbContext>));
-		//	TDbContext dbContext = (TDbContext) _webApiConfig.DependencyResolver.GetService(dbContextType);
-
-		//	using (dbContext)
-		//	{
-		//		foreach (var property in GetDbSetProperties(dbContextType))
-		//		{
-		//			// Add a new controller for each DbSet<> that doesn't already have a controller
-		//			string entitySetName = property.Name;
-		//			HttpControllerDescriptor controllerDescriptor;
-		//			if (! existingControllers.TryGetValue(entitySetName, out controllerDescriptor))
-		//			{
-		//				// Add a controller for this DbSet
-		//				Type entityType = property.PropertyType.GetGenericArguments()[0];
-
-		//				// Determine the key type
-		//				Type keyType = entityKeyHelper.SingleKeyPropertyForEntity(dbContext, entityType).PropertyType;
-
-		//				// Determine the controller type
-		//				Type controllerType = controllerTypeSelector(entityType, keyType, dbContextType);
-
-		//				AddEntitySetController(entitySetName, entityType, controllerType);
-		//			}
-		//		}
-		//	}
-		//}
 
 		/// <summary>
 		/// Builds the <see cref="IEdmModel"/> for the odata service based on the entityset controllers that have been configured.
@@ -234,6 +227,7 @@ namespace EntityRepository.ODataServer
 		public IEnumerable<IODataRoutingConvention> GetRoutingConventions()
 		{
 			IList<IODataRoutingConvention> routingConventions = ODataRoutingConventions.CreateDefault();
+			routingConventions.Insert(0, new GenericPropertyRoutingConvention());
 			return routingConventions;
 		}
 
