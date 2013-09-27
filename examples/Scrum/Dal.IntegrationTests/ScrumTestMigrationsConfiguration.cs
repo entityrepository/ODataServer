@@ -58,18 +58,15 @@ namespace Scrum.Dal.IntegrationTests
 			infraProject.Versions.Add(new ProjectVersion { Name = "1.0" });
 			infraProject.Versions.Add(new ProjectVersion { Name = "Backlog" });
 
-			WorkItem item1 = new WorkItem
+			WorkItem item1 = new WorkItem(infraProject, gailUser, Priority.High)
 			{
 				//Number = 1,
 				Title = "Some log entries are logged twice",
-				Creator = gailUser,
 				Created = new DateTime(2013, 1, 12),
-				Priority = Priority.High,
 				Status = Status.WorkingOn,
 				TimeEstimate = new TimeSpan(3, 0, 0),
 				Description = "In the ingestion log, some of the log rows are logged twice."
 			};
-			infraProject.WorkItems.Add(item1);
 			item1.AssignedTo.Add(gailUser);
 			item1.Subscribers.Add(joeUser);
 			item1.Areas.Add(loggingArea);
@@ -94,15 +91,6 @@ namespace Scrum.Dal.IntegrationTests
 			dwProject.Versions.Add(new ProjectVersion { Name = "1.0" });
 			dwProject.Versions.Add(new ProjectVersion { Name = "Backlog" });
 
-			try
-			{
-				scrumDb.SaveChanges();
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine(ex);
-				throw new InvalidOperationException("Failure saving seed data", ex);
-			}
 		}
 
 		public static void SeedStaticReadOnlyFieldValues<TEntity>(DbContext dbContext) where TEntity : class

@@ -150,19 +150,26 @@
     <Compile Include="Autofac\AutofacWebApiDependencyResolver.cs" />
     <Compile Include="Autofac\AutofacWebApiDependencyScope.cs" />
     <Compile Include="Autofac\ODataServiceModule.cs" />
+    <Compile Include="Batch\ChangeSetContext.cs" />
+    <Compile Include="Batch\ChangeSetEntityModelBinder.cs" />
+    <Compile Include="Batch\BatchChangeSetRequestItem.cs" />
+    <Compile Include="Batch\ContentIdHelper.cs" />
     <Compile Include="Batch\ODataServerBatchHandler.cs" />
-    <Compile Include="ChangeSetExtensions.cs" />
+    <Compile Include="Batch\ChangeSetExtensions.cs" />
     <Compile Include="EF\EfExtensions.cs" />
     <Compile Include="Model\EntitySetMetadata.cs" />
     <Compile Include="EF\DbContextMetadata.cs" />
     <Compile Include="Model\EntityTypeMetadata.cs" />
+    <Compile Include="Model\INavigationMetadata.cs" />
+    <Compile Include="Model\NavigationMetadata.cs" />
     <Compile Include="ODataController.cs" />
     <Compile Include="Routing\ActionMapExtensions.cs" />
     <Compile Include="Routing\EntityRepositoryActionSelector.cs" />
     <Compile Include="Routing\RenamedReflectedHttpActionDescriptor.cs" />
     <Compile Include="Routing\RoutingExtensions.cs" />
     <Compile Include="Routing\UseEntityRepositoryActionSelectorAttribute.cs" />
-    <Compile Include="Routing\GenericPropertyRoutingConvention.cs" />
+    <Compile Include="Routing\GenericNavigationPropertyRoutingConvention.cs" />
+    <Compile Include="Util\CollectionExtensions.cs" />
     <Compile Include="Util\EntityKeyFunctions.cs" />
     <Compile Include="Model\IContainerMetadataOfT.cs" />
     <Compile Include="Routing\EntityRepositoryControllerSelector.cs" />
@@ -172,13 +179,14 @@
     <Compile Include="Model\IContainerMetadata.cs" />
     <Compile Include="Model\IEntitySetMetadata.cs" />
     <Compile Include="Model\IEntityTypeMetadata.cs" />
-    <Compile Include="Util\EntitySetControllerHelpers.cs" />
+    <Compile Include="EntitySetControllerHelpers.cs" />
     <Compile Include="EF\ReadOnlyDbSetController.cs" />
     <Compile Include="EF\EditDbSetController.cs" />
     <Compile Include="ODataServerConfigurer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="..\SharedAssemblyInfo.cs" />
     <Compile Include="Util\ReflectionExtensions.cs" />
+    <Compile Include="Util\TaskExtensions.cs" />
     <Compile Include="Util\WebExtensions.cs" />
   </ItemGroup>
   <ItemGroup>

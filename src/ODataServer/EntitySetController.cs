@@ -6,21 +6,22 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Web.Http.OData.Results;
+using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Routing;
 using EntityRepository.ODataServer.Util;
 using Microsoft.Data.Edm;
 using System;
-using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using System.Web.Http.ModelBinding;
 using System.Web.Http.OData;
 using System.Web.Http.OData.Query;
+using System.Web.Http.OData.Results;
 using System.Web.Http.OData.Routing;
 
 namespace EntityRepository.ODataServer
@@ -124,21 +125,24 @@ namespace EntityRepository.ODataServer
 
 			queryOptions.Validate(QueryValidationSettings);
 
-			IQueryable<TEntity> query = GetEntityByKeyQuery(key);
-			IQueryable queryOptionsApplied = queryOptions.ApplyTo(query);
-
 			// TODO: Do this as an async continuation
 
-			// Get a single element
-			return Request.CreateSingleEntityResponse(queryOptionsApplied);
-		}
+			if (queryOptions.AreEmpty())
+			{
+				// Simple query, just do a lookup
+				TEntity entity = GetEntityByKey(key);
+				return Request.CreateSingleEntityResponse(entity);
+			}
+			else
+			{
+				// Return a query
+				IQueryable<TEntity> query = GetEntityByKeyQuery(key);
+				IQueryable queryOptionsApplied = queryOptions.ApplyTo(query);
 
-		// REVIEW: This used to work, but now doesn't (web api odata rc1).  Which is fine, b/c the implementation above is better.
-		//[Queryable(AllowedQueryOptions = AllowedQueryOptions.All, MaxExpansionDepth = 15)]
-		//public virtual SingleResult<TEntity> Get([FromODataUri] TKey key)
-		//{
-		//	return SingleResult.Create(GetEntityByKeyQuery(key));
-		//}
+				// Get a single element
+				return Request.CreateSingleEntityResponseFromRuntimeType(queryOptionsApplied);
+			}
+		}
 
 		/// <summary>
 		/// Handles POST requests that create new entities in the entity set.
@@ -182,6 +186,7 @@ namespace EntityRepository.ODataServer
 			Contract.Requires<ArgumentNullException>(patch != null);
 
 			TEntity patchedEntity = PatchEntity(key, patch);
+
 			return EntitySetControllerHelpers.PatchResponse(Request, patchedEntity);
 		}
 
@@ -204,6 +209,22 @@ namespace EntityRepository.ODataServer
 		public virtual void CreateLink([FromODataUri] TKey key, string navigationProperty, [FromBody] Uri link)
 		{
 			Contract.Requires<ArgumentException>(! string.IsNullOrWhiteSpace(navigationProperty));
+			Contract.Requires<ArgumentNullException>(link != null);
+
+			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "Create Link");
+		}
+
+		/// <summary>
+		/// Create link method called when <paramref name="entity"/> is a known Content-ID earlier in the batch request.
+		/// </summary>
+		/// <param name="changeSetEntity">An entity that was added earlier in the current changeset.</param>
+		/// <param name="navigationProperty"></param>
+		/// <param name="link"></param>
+		[AcceptVerbs("POST", "PUT")]
+		public virtual void CreateLink([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity changeSetEntity, string navigationProperty, [FromBody] Uri link)
+		{
+			Contract.Requires<ArgumentNullException>(changeSetEntity != null);
+			Contract.Requires<ArgumentException>(!string.IsNullOrWhiteSpace(navigationProperty));
 			Contract.Requires<ArgumentNullException>(link != null);
 
 			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "Create Link");
@@ -253,7 +274,7 @@ namespace EntityRepository.ODataServer
 
 			queryOptions.Validate(QueryValidationSettings);
 
-			IEdmNavigationProperty edmNavigationProperty = GenericPropertyRoutingConvention.GetNavigationProperty(ODataPath);
+			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(ODataPath);
 			Contract.Assert(navigationProperty == edmNavigationProperty.Name);
 
 			IQueryable<TEntity> query = GetEntityWithNavigationPropertyQuery<TProperty>(key, edmNavigationProperty);
@@ -276,6 +297,24 @@ namespace EntityRepository.ODataServer
 		public virtual CreatedODataResult<TProperty> PostNavigationProperty<TProperty>([FromODataUri] TKey key, string navigationProperty, [FromBody] TProperty propertyEntity)
 			where TProperty : class
 		{
+			Contract.Requires<ArgumentNullException>(navigationProperty != null);
+			Contract.Requires<ArgumentNullException>(propertyEntity != null);
+
+			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "POST NavigationProperty");
+		}
+
+		/// <summary>
+		/// Handles POST requests on navigation properties.
+		/// </summary>
+		/// <typeparam name="TProperty"></typeparam>
+		/// <param name="changeSetEntity">An entity that was added earlier in the current changeset.</param>
+		/// <param name="navigationProperty"></param>
+		/// <param name="propertyEntity"></param>
+		/// <returns></returns>
+		public virtual CreatedODataResult<TProperty> PostNavigationProperty<TProperty>([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity changeSetEntity, string navigationProperty, [FromBody] TProperty propertyEntity)
+			where TProperty : class
+		{
+			Contract.Requires<ArgumentNullException>(changeSetEntity != null);
 			Contract.Requires<ArgumentNullException>(navigationProperty != null);
 			Contract.Requires<ArgumentNullException>(propertyEntity != null);
 
@@ -320,13 +359,24 @@ namespace EntityRepository.ODataServer
 		}
 
 		/// <summary>
-		/// This method should be overridden to retrieve an entity by key from the entity set.
+		/// This method should be overridden to return an entity by key from the entity set.
 		/// </summary>
 		/// <param name="key">The entity key of the entity to retrieve.</param>
 		/// <returns>The retrieved entity, or <c>null</c> if an entity with the specified entity key cannot be found in the entity set.</returns>
+		protected virtual TEntity GetEntityByKey(TKey key)
+		{
+			return null;
+		}
+	
+		/// <summary>
+		/// This method should be overridden to return an <see cref="IQueryable{T}"/> that retrieves an entity by key from the entity set.  The query may
+		/// be modified using query options to filter or expand the query.
+		/// </summary>
+		/// <param name="key">The entity key of the entity to query for.</param>
+		/// <returns>A base query to retrieve the entity with key <c>==</c> <paramref name="key"/>.</returns>
 		protected virtual IQueryable<TEntity> GetEntityByKeyQuery(TKey key)
 		{
-			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "GET entity by key");
+			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "GET entity by key query");
 		}
 
 		/// <summary>

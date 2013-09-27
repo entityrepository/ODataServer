@@ -6,19 +6,22 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Diagnostics.Contracts;
-using System.Web.Http.OData.Results;
+using System.Linq;
+using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Routing;
 using EntityRepository.ODataServer.Util;
+using Microsoft.Data.Edm;
 using System;
 using System.Data.Entity;
-using System.Net;
+using System.Diagnostics.Contracts;
 using System.Net.Http;
+using System.Web.Http;
+using System.Web.Http.ModelBinding;
 using System.Web.Http.OData;
 using System.Web.Http.OData.Query;
+using System.Web.Http.OData.Results;
 using System.Web.Http.OData.Routing;
-using Microsoft.Data.Edm;
 
 namespace EntityRepository.ODataServer.EF
 {
@@ -63,32 +66,6 @@ namespace EntityRepository.ODataServer.EF
 			}
 		}
 
-		//#region Additional request formats
-
-		///// <summary>
-		///// Handles POST requests that create new entities in the entity set.
-		///// </summary>
-		///// <param name="entity">The entity to insert into the entity set.</param>
-		///// <returns>The response message to send back to the client.</returns>
-		//public virtual HttpResponseMessage PostNavigationProperty<TChildEntity>([FromODataUri] TKey key, [FromODataUri] string navigation, [FromBody] TChildEntity childEntity)
-		//	where TChildEntity : class
-		//{
-		//	Contract.Requires<ArgumentException>(! string.IsNullOrWhiteSpace(navigation));
-		//	Contract.Requires<ArgumentNullException>(childEntity != null);
-
-		//	TEntity original = DbSet.Find(key);
-		//	if (original == null)
-		//	{
-		//		string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
-		//		throw new ArgumentException(error, "key");
-		//	}
-
-		//	original.SetPropertyValue(navigation, childEntity);
-
-		//	return EntitySetControllerHelpers.PostResponse<TChildEntity, object>(this, childEntity, null);
-		//}
-
-		//#endregion
 		#region Support for Create-Update-Delete operations on entities
 
 		protected internal override TEntity CreateEntity(TEntity entity)
@@ -159,7 +136,12 @@ namespace EntityRepository.ODataServer.EF
 				throw new ArgumentException(error, "key");
 			}
 
-			IEdmNavigationProperty edmNavigationProperty = GenericPropertyRoutingConvention.GetNavigationProperty(ODataPath);
+			return PostNavigationProperty(entity, navigationProperty, propertyEntity);
+		}
+
+		public override CreatedODataResult<TProperty> PostNavigationProperty<TProperty>([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity entity, string navigationProperty, TProperty propertyEntity)
+		{
+			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(ODataPath);
 			Contract.Assert(navigationProperty == edmNavigationProperty.Name);
 
 			if (edmNavigationProperty.Type.IsCollection())
@@ -177,12 +159,49 @@ namespace EntityRepository.ODataServer.EF
 			return Created(propertyEntity);
 		}
 
+
 		#endregion
 		#region Support for Create-Update-Delete operations on links
 
-		public override void CreateLink(TKey key, string navigationProperty, Uri link)
+		public override void CreateLink(TKey key, string navigationProperty, [FromBody] Uri link)
 		{
-			base.CreateLink(key, navigationProperty, link);
+			TEntity entity = DbSet.Find(key);
+			if (entity == null)
+			{
+				string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
+				throw new ArgumentException(error, "key");
+			}
+
+			CreateLink(entity, navigationProperty, link);
+		}
+
+		public override void CreateLink([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity entity, string navigationProperty, [FromBody] Uri link)
+		{
+			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(ODataPath);
+			Contract.Assert(navigationProperty == edmNavigationProperty.Name);
+
+			// Fetch the linked object either via a ChangeSet/Content-ID reference, or by fetching it from the database.
+			object linkedObject = null;
+			if (! Request.ContentIdReferenceToEntity(link.OriginalString, out linkedObject))
+			{
+				linkedObject = GetEntityForLink(link);
+			}
+			if (linkedObject == null)
+			{
+				throw new ArgumentException(string.Format("Link: {0} could not be resolved to an entity", link), "link");
+			}
+
+			if (edmNavigationProperty.Type.IsCollection())
+			{
+				object propertyCollection = entity.GetPropertyValue(navigationProperty);
+				propertyCollection.InvokeMethod("Add", linkedObject);
+			}
+			else
+			{
+				entity.SetPropertyValue(navigationProperty, linkedObject);
+			}
+
+			this.OnChangeSetSuccess(SaveChanges);
 		}
 
 		public override void DeleteLink(TKey key, string navigationProperty, Uri link)

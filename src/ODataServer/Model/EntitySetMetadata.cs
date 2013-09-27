@@ -45,5 +45,7 @@ namespace EntityRepository.ODataServer.Model
 
 		public IEnumerable<IEntityTypeMetadata> ElementTypeHierarchyMetadata { get; private set; }
 
+		public IEnumerable<INavigationMetadata> NavigationProperties { get; internal set; }
+
 	}
 }

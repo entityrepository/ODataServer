@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="EntityRef.cs" company="EntityRepository Contributors" year="2013">
+// <copyright file="OptionalEntityRef.cs" company="EntityRepository Contributors" year="2013">
 // This software is part of the EntityRepository library
 // Copyright © 2012 EntityRepository Contributors
 // http://entityrepository.codeplex.org/
@@ -12,41 +12,57 @@ using System.Diagnostics.Contracts;
 namespace Scrum.Model.Base
 {
 
-
-	public struct EntityRef<TEntity, TKey> where TEntity : class
+	/// <summary>
+	/// A reference to an entity which is optional (nullable foreign key).
+	/// </summary>
+	/// <typeparam name="TEntity"></typeparam>
+	/// <typeparam name="TKey"></typeparam>
+	public struct OptionalEntityRef<TEntity, TKey> 
+		where TEntity : class
+		where TKey : struct
 	{
 
 		// Whether the entity reference is set.
 		// The entity value.
 		private TEntity _entity;
-		private TKey _foreignKey;
+		private TKey? _foreignKey;
 		// Function to obtain the key of an entity
-		private Func<TEntity, TKey> _funcEntityToKey;
-		private bool _isSet;
+		private readonly Func<TEntity, TKey> _funcEntityToKey;
 
-		public EntityRef(Func<TEntity, TKey> funcEntityToKey)
+		public OptionalEntityRef(Func<TEntity, TKey> funcEntityToKey)
 		{
 			Contract.Requires<ArgumentNullException>(funcEntityToKey != null);
 
 			_funcEntityToKey = funcEntityToKey;
-			_isSet = false;
-			_foreignKey = default(TKey);
+			_foreignKey = null;
 			_entity = null;
 		}
 
-		public TKey ForeignKey
+		public TKey? ForeignKey
 		{
-			get { return _foreignKey; }
+			get
+			{
+				TEntity entity = _entity;
+				if (entity != null)
+				{
+					return GetKeyOfEntity(entity);
+				}
+				return _foreignKey;
+			}
 			set
 			{
+				if (HasReference && !Equals(value, ForeignKey))
+				{
+					throw new InvalidOperationException("ForeignKey value cannot be directly modified after it is set.");	
+				}
+
 				_foreignKey = value;
-				_isSet = ! Equals(_foreignKey, default(TKey));
 			}
 		}
 
 		public bool HasReference
 		{
-			get { return _isSet; }
+			get { return _foreignKey.HasValue || (_entity != null); }
 		}
 
 		public TEntity Entity
@@ -57,7 +73,7 @@ namespace Scrum.Model.Base
 			}
 			set
 			{
-				if (Object.ReferenceEquals(value, null))
+				if (ReferenceEquals(value, null))
 				{
 					Clear();
 				}
@@ -65,15 +81,13 @@ namespace Scrum.Model.Base
 				{
 					_entity = value;
 					_foreignKey = GetKeyOfEntity(value);
-					_isSet = true;
 				}
 			}
 		}
 
 		public void Clear()
 		{
-			_isSet = false;
-			_foreignKey = default(TKey);
+			_foreignKey = null;
 			_entity = null;
 		}
 
@@ -93,7 +107,7 @@ namespace Scrum.Model.Base
 				}
 				catch (Exception ex)
 				{
-					string message = string.Format("Error extracting the key for an entity of type {0} ; to fix this, pass a valid funcEntityToKey to the EntityRef constructor.",
+					string message = string.Format("Error extracting the key for an entity of type {0} ; to fix this, pass a valid funcEntityToKey to the OptionalEntityRef constructor.",
 					                               entity.GetType().FullName);
 					throw new InvalidOperationException(message, ex);
 				}

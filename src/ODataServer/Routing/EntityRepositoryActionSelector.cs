@@ -19,6 +19,7 @@ using System.Web.Http.Controllers;
 using System.Web.Http.OData.Routing;
 using System.Web.Http.OData.Routing.Conventions;
 using System.Web.Http.Routing;
+using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.Model;
 using Microsoft.Data.Edm;
 
@@ -66,9 +67,9 @@ namespace EntityRepository.ODataServer.Routing
 		public ILookup<string, HttpActionDescriptor> GetActionMapping(HttpControllerDescriptor controllerDescriptor)
 		{
 			var innerMapping = _innerSelector.GetActionMapping(controllerDescriptor);
-			if (innerMapping.Contains(GenericPropertyRoutingConvention.PostNavigationPropertyMethodName))
+			if (innerMapping.Contains(GenericNavigationPropertyRoutingConvention.PostNavigationPropertyMethodName))
 			{
-				// TODO: Cache?
+				// TODO: Cache per controller type - this is probably pretty expensive.
 				return ExpandGenericNavigationPropertyActions(innerMapping);
 			}
 			else
@@ -110,14 +111,45 @@ namespace EntityRepository.ODataServer.Routing
 				{
 					routeData.Values[ODataRouteConstants.Action] = actionName;
 					IEnumerable<HttpActionDescriptor> candidateActions = actionMap[actionName];
-					if (candidateActions.Count() == 1)
+					int countMatchingActions = candidateActions.Count();
+					if (countMatchingActions == 1)
 					{
 						HttpActionDescriptor selectedCandidate = candidateActions.First();
 						return selectedCandidate;
 					}
+					else if (countMatchingActions == 0)
+					{
+						return null;
+					}
+
+					if (candidateActions.Any(candidateAction => ChangeSetEntityModelBinder.ActionHasChangeSetEntityParameter(candidateAction)))
+					{
+						IEnumerable<HttpActionDescriptor> orderedActions = candidateActions.OrderBy(DetermineActionOrder);
+						// TODO: IDEAL: Select the first action with all parameters present
+						// Since I can't figure out a good way to determine that, this implementation returns
+						// the changeSetEntity action iff the request URI has a ContentId reference;
+						// otherwise it returns the next available action.
+						foreach (var candidateAction in orderedActions)
+						{
+							if (ChangeSetEntityModelBinder.ActionHasChangeSetEntityParameter(candidateAction))
+							{
+								if (ContentIdHelper.RequestHasContentIdReference(controllerContext.Request))
+								{
+									return candidateAction;
+								}
+								// else continue;
+							}
+							else
+							{
+								return candidateAction;
+							}
+						}
+					}
 					else
 					{
-						// Delegate all the fancy overload resolution to the base class.
+						// If there aren't any ChangeSet entity parameters in any of the candidate actions, just use the regular 
+						// HttpActionSelector's implementation. It does a good job selecting the best match based on parameters, but it doesn't support
+						// using an expanded set of actions.
 						return _innerSelector.SelectAction(controllerContext);
 					}
 				}
@@ -135,11 +167,11 @@ namespace EntityRepository.ODataServer.Routing
 			List<HttpActionDescriptor> expandedDescriptors = new List<HttpActionDescriptor>();
 
 			// Expand generic methods named "PostNavigationProperty" to all supported types
-			ExpandGenericNavigationActionsForAllNavigationProperties(innerMapping[GenericPropertyRoutingConvention.PostNavigationPropertyMethodName],
+			ExpandGenericNavigationActionsForAllNavigationProperties(innerMapping[GenericNavigationPropertyRoutingConvention.PostNavigationPropertyMethodName],
 			                                                         expandedDescriptors,
 			                                                         removeDescriptors,
 			                                                         navPropertyName => "Post" + navPropertyName);
-			ExpandGenericNavigationActionsForAllNavigationProperties(innerMapping[GenericPropertyRoutingConvention.GetNavigationPropertyMethodName],
+			ExpandGenericNavigationActionsForAllNavigationProperties(innerMapping[GenericNavigationPropertyRoutingConvention.GetNavigationPropertyMethodName],
 			                                                         expandedDescriptors,
 			                                                         removeDescriptors,
 			                                                         navPropertyName => "Get" + navPropertyName);
@@ -185,7 +217,9 @@ namespace EntityRepository.ODataServer.Routing
 								Type tProperty = propertyTypeMetadata.ClrType;
 								MethodInfo genericMethod = reflectedHttpActionDescriptor.MethodInfo.MakeGenericMethod(tProperty);
 								string expandedActionName = actionNameBuilder(edmNavigationProperty.Name);
-								expandedDescriptors.Add(new RenamedReflectedHttpActionDescriptor(reflectedHttpActionDescriptor.ControllerDescriptor, genericMethod, expandedActionName));
+								expandedDescriptors.Add(new RenamedReflectedHttpActionDescriptor(reflectedHttpActionDescriptor.ControllerDescriptor,
+								                                                                 genericMethod,
+								                                                                 expandedActionName));
 							}
 						}
 					}
@@ -193,6 +227,28 @@ namespace EntityRepository.ODataServer.Routing
 					removeDescriptors.Add(reflectedHttpActionDescriptor);
 				}
 			}
+		}
+
+		/// <summary>
+		/// Determines the relative order of an action - used to select the lowest priority action in <see cref="SelectAction"/>.
+		/// </summary>
+		/// <param name="actionDescriptor"></param>
+		/// <returns></returns>
+		private static int DetermineActionOrder(HttpActionDescriptor actionDescriptor)
+		{
+			// Hard-coded rule: An action with first parameter "TEntity entity" is order 1
+			// All others are order 2
+			var parameters = actionDescriptor.GetParameters();
+			if (parameters.Count >= 1)
+			{
+				if (ChangeSetEntityModelBinder.IsChangeSetEntityParameter(parameters[0]))
+				{
+					// Takes precedence
+					return 1;
+				}
+			}
+
+			return 2;
 		}
 	}
 }

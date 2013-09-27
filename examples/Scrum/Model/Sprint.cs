@@ -17,12 +17,12 @@ namespace Scrum.Model
 	public class Sprint : BaseEntity<int, Sprint>
 	{
 
-		public DateTime? EndDate { get; set; }
-
 		[StringLength(64)]
 		public string Name { get; set; }
 
 		public DateTime? StartDate { get; set; }
+
+		public DateTime? EndDate { get; set; }
 
 	}
 }

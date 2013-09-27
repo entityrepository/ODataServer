@@ -13,17 +13,20 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web.Http.Dependencies;
-using System.Web.Http.Hosting;
-using System.Web.Http.OData.Batch;
 
-namespace EntityRepository.ODataServer
+namespace EntityRepository.ODataServer.Batch
 {
 	/// <summary>
 	/// Extension methods for <see cref="ODataController"/> subclasses to handle OData changesets.
 	/// </summary>
 	public static class ChangeSetExtensions
 	{
+		/// <summary>
+		/// The name of the Content-ID header.
+		/// </summary>
+		public const string ContentIdHeaderName = "Content-ID";
+
+		private const string c_initialRequestUriKey = "EntityRepository.InitialChangeSetRequestUri";
 
 		#region Public ODataController extension methods
 
@@ -110,25 +113,83 @@ namespace EntityRepository.ODataServer
 			}
 		}
 
-		public static bool InChangeset(this ODataController oDataController)
+		public static bool InChangeSet(this ODataController oDataController)
 		{
 			Contract.Requires<ArgumentNullException>(oDataController != null);
 
 			object changeSetObject;
-			return oDataController.Request.Properties.TryGetValue(ChangeSetContextKey, out changeSetObject)
+			return oDataController.Request.Properties.TryGetValue(ChangeSetContext.ChangeSetContextKey, out changeSetObject)
 				   && changeSetObject is ChangeSetContext;
+		}
+
+		public static int? ContentId(this HttpRequestMessage request)
+		{
+			IEnumerable<string> headerValues;
+			int requestContentId;
+			if (!request.Headers.TryGetValues(ContentIdHeaderName, out headerValues)
+				|| !int.TryParse(headerValues.First(), out requestContentId))
+			{
+				return null;
+			}
+
+			return requestContentId;
+		}
+
+		public static void TrySetChangeSetContentIdEntity<TEntity>(this HttpRequestMessage request, TEntity entity)
+		{
+			int? requestContentId = request.ContentId();
+			ChangeSetContext changeSetContext = request.GetChangeSetContext();
+			if ((changeSetContext == null)
+				|| (!requestContentId.HasValue))
+			{
+				return;
+			}
+
+			changeSetContext.AddContentIdRecord(requestContentId.Value, request, entity, typeof(TEntity));
+		}
+
+		internal static void StoreLocationHeaderForContentId(HttpResponseMessage response, ChangeSetContext changeSetContext)
+		{
+			int? requestContentId = response.RequestMessage.ContentId();
+			if (requestContentId.HasValue)
+			{
+				if (response.Headers.Location != null)
+				{
+					changeSetContext.GetContentIdRecord(requestContentId.Value).Location = response.Headers.Location.AbsoluteUri;
+				}
+			}
+		}
+
+		public static bool ContentIdReferenceToEntity(this HttpRequestMessage request, string reference, out object referencedEntity)
+		{
+			referencedEntity = null;
+			int contentId;
+			if (! ContentIdHelper.TryParseContentIdReference(reference, out contentId))
+			{
+				return false;
+			}
+
+			ChangeSetContext changeSetContext = request.GetChangeSetContext();
+			if (changeSetContext != null)
+			{
+				ContentIdRecord contentIdRecord = changeSetContext.GetContentIdRecord(contentId);
+				if (contentIdRecord != null)
+				{
+					referencedEntity = contentIdRecord.Entity;
+				}
+			}
+
+			return referencedEntity != null;
 		}
 
 		#endregion
 
-		#region Internal and private static methods
+		#region Internal and private helper methods
 
-		internal const string ChangeSetContextKey = "EntityRepository.ChangeSet";
-
-		private static ChangeSetContext GetChangeSetContext(this HttpRequestMessage requestMessage)
+		internal static ChangeSetContext GetChangeSetContext(this HttpRequestMessage requestMessage)
 		{
 			object objChangeSetContext;
-			if (requestMessage.Properties.TryGetValue(ChangeSetContextKey, out objChangeSetContext))
+			if (requestMessage.Properties.TryGetValue(ChangeSetContext.ChangeSetContextKey, out objChangeSetContext))
 			{
 				return objChangeSetContext as ChangeSetContext;
 			}
@@ -138,98 +199,37 @@ namespace EntityRepository.ODataServer
 			}
 		}
 
-		internal static void SetUpChangeSetContext(this ChangeSetRequestItem changeSetRequest, HttpRequestMessage parentHttpRequestMessage)
+		internal static void SaveInitialChangeSetRequestUri(this HttpRequestMessage requestMessage)
 		{
-			Contract.Requires<ArgumentNullException>(changeSetRequest != null);
-			Contract.Requires<ArgumentNullException>(parentHttpRequestMessage != null);
-			
-			// Create a single dependency scope to be shared amongst all the requests in the Changeset
-			IDependencyResolver dependencyResolver = parentHttpRequestMessage.GetConfiguration().DependencyResolver;
-			IDependencyScope dependencyScope = dependencyResolver.BeginScope();
-
-			// Create a single ChangeSetContext to be shared amongst all the requests in the Changeset
-			ChangeSetContext changeSetContext = new ChangeSetContext();
-
-			foreach (HttpRequestMessage subrequest in changeSetRequest.Requests)
-			{
-				// Store the shared ChangeSetContext and the shared DependencyScope in each subrequest
-				subrequest.Properties[HttpPropertyKeys.DependencyScope] = dependencyScope;
-				subrequest.Properties[ChangeSetContextKey] = changeSetContext;
-			}
+			requestMessage.Properties.Add(c_initialRequestUriKey, requestMessage.RequestUri.OriginalString);
 		}
 
-		internal static async Task ExecuteChangeSetCompletionActions(this ChangeSetResponseItem changeSetResponse)
+		internal static string GetInitialChangeSetRequestUri(this HttpRequestMessage requestMessage)
 		{
-			Contract.Requires<ArgumentNullException>(changeSetResponse != null);
-
-			HttpResponseMessage firstResponseMessage = changeSetResponse.Responses.FirstOrDefault();
-			if (firstResponseMessage == null)
+			object value;
+			if (requestMessage.Properties.TryGetValue(c_initialRequestUriKey, out value))
 			{
-				// No responses
-				return;
-			}
-
-			// Get the ChangeSetContext
-			ChangeSetContext changeSetContext = firstResponseMessage.RequestMessage.GetChangeSetContext();
-			if (changeSetContext == null)
-			{
-				// Not in a ChangeSet; just return
-				return;
-			}
-
-			// Per ChangeSetRequestItem.SendRequestAsync, if there are any errors the successful responses are removed.
-			// Therefore the changeset fails if the first response is not successful
-			if (firstResponseMessage.IsSuccessStatusCode)
-			{
-				await changeSetContext.AsyncExecuteSuccessActions();
+				return value as string;
 			}
 			else
 			{
-				await changeSetContext.AsyncExecuteFailureActions();
+				return requestMessage.RequestUri.OriginalString;
+			}
+		}
+
+		internal static void CopyContentIdHeaderToResponse(HttpRequestMessage request, HttpResponseMessage response)
+		{
+			Contract.Assert(request != null);
+			Contract.Assert(response != null);
+
+			IEnumerable<string> values;
+			if (request.Headers.TryGetValues(ChangeSetExtensions.ContentIdHeaderName, out values))
+			{
+				response.Headers.TryAddWithoutValidation(ChangeSetExtensions.ContentIdHeaderName, values);
 			}
 		}
 
 		#endregion
-
-
-		internal class ChangeSetContext
-		{
-			private List<Task> _onSuccessTasks = new List<Task>();
-			private List<Task> _onFailureTasks = new List<Task>();
-
-			public void AddOnChangeSetSuccessTask(Task onSuccessTask)
-			{
-				lock (this)
-				{
-					_onSuccessTasks.Add(onSuccessTask);
-				}
-			}
-
-			public void AddOnChangeSetFailureTask(Task onFailureTask)
-			{
-				lock (this)
-				{
-					_onFailureTasks.Add(onFailureTask);
-				}
-			}
-
-			public async Task AsyncExecuteSuccessActions()
-			{
-				foreach (Task task in _onSuccessTasks)
-				{
-					await task;
-				}
-			}
-
-			public async Task AsyncExecuteFailureActions()
-			{
-				foreach (Task task in _onFailureTasks)
-				{
-					await task;
-				}
-			}
-
-		}
 
 	}
 }

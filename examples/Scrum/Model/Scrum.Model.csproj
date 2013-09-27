@@ -108,8 +108,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Base\BaseEntity.cs" />
+    <Compile Include="Base\OptionalEntityRef.cs" />
     <Compile Include="Base\DbEnumManager.cs" />
-    <Compile Include="Base\EntityRef.cs" />
+    <Compile Include="Base\RequiredEntityRef.cs" />
     <Compile Include="Base\NamedDbEnum.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Priority.cs" />

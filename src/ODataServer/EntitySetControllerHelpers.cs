@@ -20,16 +20,18 @@ using System.Web.Http;
 using System.Web.Http.OData;
 using System.Web.Http.OData.Query;
 using System.Web.Http.OData.Routing;
+using System.Web.Http.Routing;
 using EntityRepository.ODataServer.Model;
+using Microsoft.Data.Edm;
 using Microsoft.Data.OData;
 using Microsoft.Data.OData.Query;
 
-namespace EntityRepository.ODataServer.Util
+namespace EntityRepository.ODataServer
 {
 	/// <summary>
 	/// Helper class for <see cref="System.Web.Http.OData.EntitySetController{TEntity,TKey}"/> and <see cref="AsyncEntitySetController{TEntity,TKey}"/> that contains shared logic.
 	/// </summary>
-	internal static class EntitySetControllerHelpers
+	public static class EntitySetControllerHelpers
 	{
 
 		internal const string PreferHeaderName = "Prefer";
@@ -51,7 +53,7 @@ namespace EntityRepository.ODataServer.Util
 		static EntitySetControllerHelpers()
 		{
 			Expression<Func<HttpRequestMessage, HttpResponseMessage>> expr = (request) => request.CreateResponse(HttpStatusCode.OK, default(object));
-			s_createResponseMethodDef = (expr.Body as MethodCallExpression).Method.GetGenericMethodDefinition();
+			s_createResponseMethodDef = ((MethodCallExpression) expr.Body).Method.GetGenericMethodDefinition();
 
 			s_createSingleResultMethodDef = typeof(SingleResult).GetMethod("Create", BindingFlags.Public | BindingFlags.Static);
 		}
@@ -78,7 +80,7 @@ namespace EntityRepository.ODataServer.Util
 			                                                                  }));
 		}
 
-		public static HttpResponseMessage CreateSingleEntityResponse(this HttpRequestMessage request, IEnumerable enumerable)
+		public static HttpResponseMessage CreateSingleEntityResponseFromRuntimeType(this HttpRequestMessage request, IEnumerable enumerable)
 		{
 			//IQueryable queryable = enumerable as IQueryable;
 			//if (queryable != null)
@@ -106,6 +108,19 @@ namespace EntityRepository.ODataServer.Util
 				}
 				return request.CreateResponseFromRuntimeType(HttpStatusCode.OK, entity);
 			//}
+		}
+
+		public static HttpResponseMessage CreateSingleEntityResponse<TEntity>(this HttpRequestMessage request, TEntity entity)
+			where TEntity : class
+		{
+			if (entity == null)
+			{
+				return request.CreateResponse(HttpStatusCode.NotFound);
+			}
+			else
+			{
+				return request.CreateResponse(HttpStatusCode.OK, entity);
+			}
 		}
 
 		public static HttpResponseMessage CreateSingleEntityProjectedResponse<TEntity>(this HttpRequestMessage request, IEnumerable<TEntity> enumerable, Func<TEntity, object> projectionFunction)
@@ -236,11 +251,83 @@ namespace EntityRepository.ODataServer.Util
 
 		public static object GetKeyFor<TEntity>(this IContainerMetadata containerMetadata, TEntity entity)
 		{
-			Contract.Assert(containerMetadata != null);
-			Contract.Assert(entity != null);
+			Contract.Requires<ArgumentNullException>(containerMetadata != null);
+			Contract.Requires<ArgumentNullException>(entity != null);
 
 			IEntityTypeMetadata entityTypeMetadata = containerMetadata.GetEntityType(typeof(TEntity));
 			return entityTypeMetadata.EntityKeyFunction(entity);
+		}
+
+		public static bool AreEmpty(this ODataQueryOptions queryOptions)
+		{
+			Contract.Requires<ArgumentNullException>(queryOptions != null);
+
+			ODataRawQueryOptions rawValues = queryOptions.RawValues;
+			return (rawValues.Filter == null)
+			       && (rawValues.Expand == null)
+			       && (rawValues.OrderBy == null)
+			       && (rawValues.Format == null)
+			       && (rawValues.InlineCount == null)
+			       && (rawValues.Select == null)
+			       && (rawValues.Skip == null)
+				   && (rawValues.SkipToken == null)
+				   && (rawValues.Top == null);
+		}
+
+		public static bool ParseSingleEntityLink(this ODataController oDataController, Uri link, out IEdmEntitySet entitySet, out object key)
+		{
+			Contract.Requires<ArgumentNullException>(oDataController != null);
+			Contract.Requires<ArgumentNullException>(link != null);
+			HttpRequestMessage request = oDataController.Request;
+
+			// Get the route that was used for this request.
+			IHttpRoute route = request.GetRouteData().Route;
+
+			// Create an equivalent self-hosted route. 
+			IHttpRoute newRoute = new HttpRoute(route.RouteTemplate,
+				new HttpRouteValueDictionary(route.Defaults),
+				new HttpRouteValueDictionary(route.Constraints),
+				new HttpRouteValueDictionary(route.DataTokens), route.Handler);
+
+			// Create a fake GET request for the link URI.
+			var tmpRequest = new HttpRequestMessage(HttpMethod.Get, link);
+
+			// Send this request through the routing process.
+			var routeData = newRoute.GetRouteData(request.GetConfiguration().VirtualPathRoot, tmpRequest);
+
+			// If the GET request matches the route, use the path segments to find the key.
+			if (routeData != null)
+			{
+				ODataPath path = tmpRequest.GetODataPath();
+				if (path.PathTemplate == "~/entityset/key")
+				{
+					entitySet = path.EntitySet;
+					var keySegment = path.Segments.OfType<KeyValuePathSegment>().FirstOrDefault();
+					if (keySegment != null)
+					{
+						// Convert the segment into the key type.
+						key = ODataUriUtils.ConvertFromUriLiteral(keySegment.Value, ODataVersion.V3, request.GetEdmModel(), entitySet.GetSingleKeyType());
+						return true;
+					}
+				}
+			}
+
+			entitySet = null;
+			key = null;
+			return false;
+		}
+
+		public static IEdmTypeReference GetSingleKeyType(this IEdmEntitySet entitySet)
+		{
+			Contract.Requires<ArgumentNullException>(entitySet != null);
+
+			IEnumerable<IEdmStructuralProperty> keys = entitySet.ElementType.Key();
+			if (keys.Count() != 1)
+			{
+				throw new InvalidOperationException(string.Format("EntitySet {0} has {1} key properties declared; a single key property is required.", entitySet.Name, keys.Count()));
+			}
+
+			return keys.Single().Type;
 		}
 
 		//[SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Response disposed later")]

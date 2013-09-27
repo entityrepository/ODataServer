@@ -6,9 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Data.Entity.ModelConfiguration.Conventions;
+using System.Data.Entity.Validation;
 using System.Diagnostics;
 using Scrum.Model;
 
@@ -77,11 +80,19 @@ namespace Scrum.Dal
 			}
 		}
 
-		protected override System.Data.Entity.Validation.DbEntityValidationResult ValidateEntity(System.Data.Entity.Infrastructure.DbEntityEntry entityEntry,
-		                                                                                         System.Collections.Generic.IDictionary<object, object> items)
+		protected override DbEntityValidationResult ValidateEntity(DbEntityEntry entityEntry, IDictionary<object, object> items)
 		{
 			// TODO: We could do our custom validation here, and turn validation back on...
-			return base.ValidateEntity(entityEntry, items);
+			DbEntityValidationResult validationResult = base.ValidateEntity(entityEntry, items);
+			if (! validationResult.IsValid)
+			{
+				Debug.WriteLine("Error validating {0} ({1}) :", validationResult.Entry.Entity, validationResult.Entry.State);
+				foreach (var validationError in validationResult.ValidationErrors)
+				{
+					Debug.WriteLine("  {0} : {1}", validationError.PropertyName, validationError.ErrorMessage);
+				}
+			}
+			return validationResult;
 		}
 
 		public override int SaveChanges()

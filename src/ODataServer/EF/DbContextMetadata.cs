@@ -128,7 +128,7 @@ namespace EntityRepository.ODataServer.EF
 			}
 			entityTypesMetadata = entityTypesList.ToArray();
 
-			List<IEntitySetMetadata> entitySetsList = new List<IEntitySetMetadata>();
+			List<EntitySetMetadata> entitySetsList = new List<EntitySetMetadata>();
 			foreach (IEdmEntitySet edmEntitySet in EdmContainer.EntitySets())
 			{
 				var elementTypeMetadata = entityTypesMetadata.Single(m => m.EdmType == edmEntitySet.ElementType);
@@ -136,6 +136,19 @@ namespace EntityRepository.ODataServer.EF
 				entitySetsList.Add(new EntitySetMetadata(this, edmEntitySet, elementTypeMetadata, elementTypeHierarchy));
 			}
 			entitySetsMetadata = entitySetsList.ToArray();
+
+			// Iterate over the EntitySets a second time to populate the navigation properties
+			foreach (IEdmEntitySet edmEntitySet in EdmContainer.EntitySets())
+			{
+				EntitySetMetadata sourceEntitySet = entitySetsList.First(esm => ReferenceEquals(esm.EdmEntitySet, edmEntitySet));
+				List<INavigationMetadata> navigationMetadata = new List<INavigationMetadata>();
+				foreach (var edmNavigationTargetMapping in edmEntitySet.NavigationTargets)
+				{
+					var targetEntitySet = entitySetsMetadata.First(esm => ReferenceEquals(esm.EdmEntitySet, edmNavigationTargetMapping.TargetEntitySet));
+					navigationMetadata.Add(new NavigationMetadata(edmNavigationTargetMapping.NavigationProperty, targetEntitySet));
+				}
+				sourceEntitySet.NavigationProperties = navigationMetadata;
+			}
 		}
 
 		private IEntityTypeMetadata[] FindTypeHierarchyFrom(IEntityTypeMetadata root, IEntityTypeMetadata[] allEntityTypes)

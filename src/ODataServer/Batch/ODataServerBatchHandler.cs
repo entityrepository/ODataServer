@@ -31,33 +31,18 @@ namespace EntityRepository.ODataServer.Batch
 			IList<ODataBatchRequestItem> requestItems = await base.ParseBatchRequestsAsync(parentRequest, cancellationToken);
 
 			// For each ChangeSet in a batch request, set up a ChangeSetContext to support committing the entire ChangeSet at once.
-			foreach (ODataBatchRequestItem oDataBatchRequestItem in requestItems)
+			for (int i = 0; i < requestItems.Count; ++i)
 			{
-				ChangeSetRequestItem changeSetRequest = oDataBatchRequestItem as ChangeSetRequestItem;
+				ChangeSetRequestItem changeSetRequest = requestItems[i] as ChangeSetRequestItem;
 				if (changeSetRequest != null)
 				{
-					changeSetRequest.SetUpChangeSetContext(parentRequest);
+					// Replace the ChangeSetRequestItem with a BatchChangeSetRequestItem
+					requestItems[i] = new BatchChangeSetRequestItem(changeSetRequest, parentRequest);
 				}
 			}
 
 			return requestItems;
 		}
 
-		public override async Task<IList<ODataBatchResponseItem>> ExecuteRequestMessagesAsync(IEnumerable<ODataBatchRequestItem> requests, CancellationToken cancellationToken)
-		{
-			IList<ODataBatchResponseItem> responseItems = await base.ExecuteRequestMessagesAsync(requests, cancellationToken);
-
-			// For each ChangeSet in a batch request, invoke the success/failure handlers
-			foreach (ODataBatchResponseItem oDataBatchResponseItem in responseItems)
-			{
-				ChangeSetResponseItem changeSetResponse = oDataBatchResponseItem as ChangeSetResponseItem;
-				if (changeSetResponse != null)
-				{
-					await changeSetResponse.ExecuteChangeSetCompletionActions();
-				}
-			}
-
-			return responseItems;
-		}
 	}
 }

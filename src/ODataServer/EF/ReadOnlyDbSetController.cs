@@ -67,6 +67,11 @@ namespace EntityRepository.ODataServer.EF
 			return DbSet.AsNoTracking();
 		}
 
+		protected override TEntity GetEntityByKey(TKey key)
+		{
+			return DbSet.Find(key);
+		}
+
 		protected override IQueryable<TEntity> GetEntityByKeyQuery(TKey key)
 		{
 			return EntityKeyFunctions<TEntity, TKey>.QueryWhereKeyMatches(GetBaseQueryable(), key, EntitySetMetadata.ElementTypeMetadata);
@@ -77,10 +82,24 @@ namespace EntityRepository.ODataServer.EF
 			return GetEntityByKeyQuery(key).Include(edmNavigationProperty.Name);
 		}
 
-		public override HttpResponseMessage HandleUnmappedRequest(ODataPath odataPath)
+		/// <summary>
+		/// Returns the entity specified by <paramref name="link"/>.  This can be an entity from 
+		/// any entityset in the <see cref="Db"/>.
+		/// </summary>
+		/// <param name="link"></param>
+		/// <returns></returns>
+		protected virtual object GetEntityForLink(Uri link)
 		{
-			return base.HandleUnmappedRequest(odataPath);
-		}
+			// Parse the link to fetch the linkedObject
+			IEdmEntitySet edmEntitySet;
+			object key;
+			if (! this.ParseSingleEntityLink(link, out edmEntitySet, out key))
+			{
+				return null;
+			}
 
+			Type entitySetType = ContainerMetadata.GetEntitySet(edmEntitySet.Name).ElementTypeMetadata.ClrType;
+			return Db.Set(entitySetType).Find(key);
+		}
 	}
 }

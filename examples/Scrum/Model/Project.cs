@@ -19,10 +19,10 @@ namespace Scrum.Model
 	{
 		#region Fields
 
-		private ICollection<ProjectArea> _areas;
 		private string _key;
 
 		private ICollection<User> _owners;
+		private ICollection<ProjectArea> _areas;
 		private ICollection<ProjectVersion> _versions;
 		private ICollection<WorkItem> _workItems;
 
@@ -51,25 +51,25 @@ namespace Scrum.Model
 		[StringLength(512)]
 		public string Description { get; set; }
 
-		public virtual ICollection<User> Owners
+		public ICollection<User> Owners
 		{
 			get { return EnsureCollectionProperty(ref _owners); }
 			set { SetCollectionProperty(ref _owners, value); }
 		}
 
-		public virtual ICollection<ProjectArea> Areas
+		public ICollection<ProjectArea> Areas
 		{
 			get { return EnsureCollectionProperty(ref _areas); }
 			set { SetCollectionProperty(ref _areas, value); }
 		}
 
-		public virtual ICollection<ProjectVersion> Versions
+		public ICollection<ProjectVersion> Versions
 		{
 			get { return EnsureCollectionProperty(ref _versions); }
 			set { SetCollectionProperty(ref _versions, value); }
 		}
 
-		public virtual ICollection<WorkItem> WorkItems
+		public ICollection<WorkItem> WorkItems
 		{
 			get { return EnsureCollectionProperty(ref _workItems); }
 			set { SetCollectionProperty(ref _workItems, value); }

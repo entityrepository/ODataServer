@@ -16,13 +16,30 @@ namespace Scrum.Model
 	public class WorkItemPropertyChange : BaseEntity<long, WorkItemPropertyChange>
 	{
 
-		[Required]
-		public WorkItem WorkItem { get; set; }
+		private RequiredEntityRef<WorkItem, int> _workItem = new RequiredEntityRef<WorkItem, int>(workItem => workItem.ID);
+		private RequiredEntityRef<User, int> _author = new RequiredEntityRef<User, int>(user => user.ID);
 
-		public int WorkItemID { get; set; }
+		public WorkItem WorkItem
+		{
+			get { return _workItem.Entity; }
+			set { _workItem.Entity = value; }
+		}
+		public int WorkItemId
+		{
+			get { return _workItem.ForeignKey; }
+			set { _workItem.ForeignKey = value; }
+		}
 
-		[Required]
-		public User Author { get; set; }
+		public User Author
+		{
+			get { return _author.Entity; }
+			set { _author.Entity = value; }
+		}
+		public int AuthorId
+		{
+			get { return _author.ForeignKey; }
+			set { _author.ForeignKey = value; }
+		}
 
 		[Required]
 		public DateTime ChangeDateTime { get; set; }

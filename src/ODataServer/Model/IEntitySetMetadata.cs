@@ -23,5 +23,6 @@ namespace EntityRepository.ODataServer.Model
 		IEdmEntitySet EdmEntitySet { get; }
 		IEntityTypeMetadata ElementTypeMetadata { get; }
 		IEnumerable<IEntityTypeMetadata> ElementTypeHierarchyMetadata { get; }
+		IEnumerable<INavigationMetadata> NavigationProperties { get; } 
 	}
 }

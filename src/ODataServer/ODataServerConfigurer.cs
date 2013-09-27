@@ -227,7 +227,7 @@ namespace EntityRepository.ODataServer
 		public IEnumerable<IODataRoutingConvention> GetRoutingConventions()
 		{
 			IList<IODataRoutingConvention> routingConventions = ODataRoutingConventions.CreateDefault();
-			routingConventions.Insert(0, new GenericPropertyRoutingConvention());
+			routingConventions.Insert(0, new GenericNavigationPropertyRoutingConvention());
 			return routingConventions;
 		}
 

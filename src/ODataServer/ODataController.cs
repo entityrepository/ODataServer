@@ -12,6 +12,7 @@ using System.Web.Http;
 using System.Web.Http.Description;
 using System.Web.Http.OData;
 using System.Web.Http.OData.Results;
+using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.Routing;
 
 namespace EntityRepository.ODataServer
@@ -40,6 +41,8 @@ namespace EntityRepository.ODataServer
 			{
 				throw new ArgumentNullException("entity");
 			}
+
+			Request.TrySetChangeSetContentIdEntity(entity);
 
 			return new CreatedODataResult<TEntity>(entity, this);
 		}

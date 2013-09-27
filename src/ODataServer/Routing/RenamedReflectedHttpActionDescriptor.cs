@@ -17,7 +17,9 @@ namespace EntityRepository.ODataServer.Routing
 	/// </summary>
 	internal class RenamedReflectedHttpActionDescriptor : ReflectedHttpActionDescriptor
 	{
-
+		/// <summary>
+		/// The <see cref="ActionName"/> for the action specified by this <see cref="HttpActionDescriptor"/>.
+		/// </summary>
 		private readonly string _actionName;
 
 		public RenamedReflectedHttpActionDescriptor(HttpControllerDescriptor controllerDescriptor, MethodInfo methodInfo, string actionName)
