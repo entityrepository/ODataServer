@@ -10,7 +10,9 @@
 using System;
 using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
+using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -71,6 +73,21 @@ namespace EntityRepository.ODataServer.EF
 				return null;
 			}
 			return clrPropertyMetadata.Value as PropertyInfo;
+		}
+
+		internal static ObjectContext GetObjectContext(this DbContext dbContext)
+		{
+			Contract.Assert(dbContext != null);
+
+			IObjectContextAdapter objectContextAdapter = dbContext;
+			return objectContextAdapter.ObjectContext;
+		}
+
+		public static void AddEntity(this DbContext dbContext, string entitySetName, object entity)
+		{
+			Contract.Requires<ArgumentNullException>(dbContext != null);
+
+			dbContext.GetObjectContext().AddObject(entitySetName, entity);
 		}
 
 		//internal static IEnumerable<PropertyInfo> GetDbSetProperties(Type dbContextType)

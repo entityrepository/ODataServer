@@ -58,20 +58,9 @@ namespace EntityRepository.ODataServer
 			s_createSingleResultMethodDef = typeof(SingleResult).GetMethod("Create", BindingFlags.Public | BindingFlags.Static);
 		}
 
-		public static ODataPath GetODataPath(ApiController controller)
-		{
-			return controller.Request.GetODataPath();
-		}
-
-		public static ODataQueryOptions<TEntity> CreateQueryOptions<TEntity>(ApiController controller)
-		{
-			ODataQueryContext context = new ODataQueryContext(controller.Request.GetEdmModel(), typeof(TEntity));
-			return new ODataQueryOptions<TEntity>(context, controller.Request);
-		}
-
 		public static HttpResponseException NotImplementedResponseException(ApiController controller, string requestType)
 		{
-			throw new HttpResponseException(controller.Request.CreateResponse(HttpStatusCode.NotImplemented,
+			return new HttpResponseException(controller.Request.CreateResponse(HttpStatusCode.NotImplemented,
 			                                                                  new ODataError
 			                                                                  {
 				                                                                  Message = string.Format("{0} does not support {1} requests.", controller.GetType().FullName, requestType),
@@ -172,68 +161,68 @@ namespace EntityRepository.ODataServer
 		//	}
 		//}
 
-		[SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Response disposed later")]
-		public static HttpResponseMessage PostResponse<TEntity, TKey>(ApiController controller, TEntity createdEntity, TKey entityKey)
-		{
-			HttpResponseMessage response = null;
-			HttpRequestMessage request = controller.Request;
-			if (RequestPrefersReturnNoContent(request))
-			{
-				response = request.CreateResponse(HttpStatusCode.NoContent);
-				response.Headers.Add(PreferenceAppliedHeaderName, ReturnNoContentHeaderValue);
-			}
-			else
-			{
-				response = request.CreateResponse(HttpStatusCode.Created, createdEntity);
-			}
+		//[SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Response disposed later")]
+		//public static HttpResponseMessage PostResponse<TEntity, TKey>(ApiController controller, TEntity createdEntity, TKey entityKey)
+		//{
+		//	HttpResponseMessage response = null;
+		//	HttpRequestMessage request = controller.Request;
+		//	if (RequestPrefersReturnNoContent(request))
+		//	{
+		//		response = request.CreateResponse(HttpStatusCode.NoContent);
+		//		response.Headers.Add(PreferenceAppliedHeaderName, ReturnNoContentHeaderValue);
+		//	}
+		//	else
+		//	{
+		//		response = request.CreateResponse(HttpStatusCode.Created, createdEntity);
+		//	}
 
-			ODataPath odataPath = request.GetODataPath();
-			if (odataPath == null)
-			{
-				throw new InvalidOperationException("Location header missing OData path");
-			}
+		//	ODataPath odataPath = request.GetODataPath();
+		//	if (odataPath == null)
+		//	{
+		//		throw new InvalidOperationException("Location header missing OData path");
+		//	}
 
-			EntitySetPathSegment entitySetSegment = odataPath.Segments.FirstOrDefault() as EntitySetPathSegment;
-			if (entitySetSegment == null)
-			{
-				throw new InvalidOperationException("Location header does not start with EntitySet");
-			}
+		//	EntitySetPathSegment entitySetSegment = odataPath.Segments.FirstOrDefault() as EntitySetPathSegment;
+		//	if (entitySetSegment == null)
+		//	{
+		//		throw new InvalidOperationException("Location header does not start with EntitySet");
+		//	}
 
-			response.Headers.Location = new Uri(controller.Url.ODataLink(
-			                                                             entitySetSegment,
-			                                                             new KeyValuePathSegment(ODataUriUtils.ConvertToUriLiteral(entityKey, ODataVersion.V3))));
-			return response;
-		}
+		//	response.Headers.Location = new Uri(controller.Url.ODataLink(
+		//																 entitySetSegment,
+		//																 new KeyValuePathSegment(ODataUriUtils.ConvertToUriLiteral(entityKey, ODataVersion.V3))));
+		//	return response;
+		//}
 
-		[SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Response disposed later")]
-		public static HttpResponseMessage PutResponse<TEntity>(HttpRequestMessage request, TEntity updatedEntity)
-		{
-			if (RequestPrefersReturnContent(request))
-			{
-				HttpResponseMessage response = request.CreateResponse(HttpStatusCode.OK, updatedEntity);
-				response.Headers.Add(PreferenceAppliedHeaderName, ReturnContentHeaderValue);
-				return response;
-			}
-			else
-			{
-				return request.CreateResponse(HttpStatusCode.NoContent);
-			}
-		}
+		//[SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Response disposed later")]
+		//public static HttpResponseMessage PutResponse<TEntity>(HttpRequestMessage request, TEntity updatedEntity)
+		//{
+		//	if (RequestPrefersReturnContent(request))
+		//	{
+		//		HttpResponseMessage response = request.CreateResponse(HttpStatusCode.OK, updatedEntity);
+		//		response.Headers.Add(PreferenceAppliedHeaderName, ReturnContentHeaderValue);
+		//		return response;
+		//	}
+		//	else
+		//	{
+		//		return request.CreateResponse(HttpStatusCode.NoContent);
+		//	}
+		//}
 
-		[SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Response disposed later")]
-		public static HttpResponseMessage PatchResponse<TEntity>(HttpRequestMessage request, TEntity patchedEntity)
-		{
-			if (RequestPrefersReturnContent(request))
-			{
-				HttpResponseMessage response = request.CreateResponse(HttpStatusCode.OK, patchedEntity);
-				response.Headers.Add(PreferenceAppliedHeaderName, ReturnContentHeaderValue);
-				return response;
-			}
-			else
-			{
-				return request.CreateResponse(HttpStatusCode.NoContent);
-			}
-		}
+		//[SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Response disposed later")]
+		//public static HttpResponseMessage PatchResponse<TEntity>(HttpRequestMessage request, TEntity patchedEntity)
+		//{
+		//	if (RequestPrefersReturnContent(request))
+		//	{
+		//		HttpResponseMessage response = request.CreateResponse(HttpStatusCode.OK, patchedEntity);
+		//		response.Headers.Add(PreferenceAppliedHeaderName, ReturnContentHeaderValue);
+		//		return response;
+		//	}
+		//	else
+		//	{
+		//		return request.CreateResponse(HttpStatusCode.NoContent);
+		//	}
+		//}
 
 		[SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Response disposed later")]
 		public static HttpResponseException UnmappedRequestResponse(ApiController controller, ODataPath odataPath)
@@ -362,7 +351,7 @@ namespace EntityRepository.ODataServer
 		/// Returns whether or not the request prefers content to be returned.
 		/// </summary>
 		/// <returns><c>true</c> if the request has a Prefer header value for "return-content", <c>false</c> otherwise</returns>
-		private static bool RequestPrefersReturnContent(HttpRequestMessage request)
+		public static bool RequestPrefersReturnContent(HttpRequestMessage request)
 		{
 			IEnumerable<string> preferences = null;
 			if (request.Headers.TryGetValues(PreferHeaderName, out preferences))
@@ -376,7 +365,7 @@ namespace EntityRepository.ODataServer
 		/// Returns whether or not the request prefers no content to be returned.
 		/// </summary>
 		/// <returns><c>true</c> if the request has a Prefer header value for "return-no-content", <c>false</c> otherwise</returns>
-		private static bool RequestPrefersReturnNoContent(HttpRequestMessage request)
+		public static bool RequestPrefersReturnNoContent(HttpRequestMessage request)
 		{
 			IEnumerable<string> preferences = null;
 			if (request.Headers.TryGetValues(PreferHeaderName, out preferences))

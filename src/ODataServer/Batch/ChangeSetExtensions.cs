@@ -117,8 +117,15 @@ namespace EntityRepository.ODataServer.Batch
 		{
 			Contract.Requires<ArgumentNullException>(oDataController != null);
 
+			return oDataController.Request.InChangeSet();
+		}
+
+		public static bool InChangeSet(this HttpRequestMessage request)
+		{
+			Contract.Requires<ArgumentNullException>(request != null);
+
 			object changeSetObject;
-			return oDataController.Request.Properties.TryGetValue(ChangeSetContext.ChangeSetContextKey, out changeSetObject)
+			return request.Properties.TryGetValue(ChangeSetContext.ChangeSetContextKey, out changeSetObject)
 				   && changeSetObject is ChangeSetContext;
 		}
 
@@ -223,9 +230,10 @@ namespace EntityRepository.ODataServer.Batch
 			Contract.Assert(response != null);
 
 			IEnumerable<string> values;
-			if (request.Headers.TryGetValues(ChangeSetExtensions.ContentIdHeaderName, out values))
+			if (request.Headers.TryGetValues(ContentIdHeaderName, out values)
+				&& !response.Headers.Contains(ContentIdHeaderName))
 			{
-				response.Headers.TryAddWithoutValidation(ChangeSetExtensions.ContentIdHeaderName, values);
+				response.Headers.TryAddWithoutValidation(ContentIdHeaderName, values);
 			}
 		}
 

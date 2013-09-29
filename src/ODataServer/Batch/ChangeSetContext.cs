@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using EntityRepository.ODataServer.Util;
 
@@ -51,17 +52,17 @@ namespace EntityRepository.ODataServer.Batch
 			}
 		}
 
-		public Task AsyncExecuteSuccessActions()
+		public Task AsyncExecuteSuccessActions(CancellationToken cancellationToken)
 		{
-			return AsyncExecuteCompletionTasks(_onSuccessTasks, "success actions");
+			return AsyncExecuteCompletionTasks(_onSuccessTasks, "success actions", cancellationToken);
 		}
 
-		public Task AsyncExecuteFailureActions()
+		public Task AsyncExecuteFailureActions(CancellationToken cancellationToken)
 		{
-			return AsyncExecuteCompletionTasks(_onFailureTasks, "failure actions");
+			return AsyncExecuteCompletionTasks(_onFailureTasks, "failure actions", cancellationToken);
 		}
 
-		private async Task AsyncExecuteCompletionTasks(IEnumerable<Task> completionTasks, string description)
+		private async Task AsyncExecuteCompletionTasks(IEnumerable<Task> completionTasks, string description, CancellationToken cancellationToken)
 		{
 			if (_disposed)
 			{
@@ -71,6 +72,7 @@ namespace EntityRepository.ODataServer.Batch
 			List<Exception> exceptions = new List<Exception>();
 			foreach (Task task in completionTasks)
 			{
+				cancellationToken.ThrowIfCancellationRequested();
 				try
 				{
 					await task.EnsureStarted();

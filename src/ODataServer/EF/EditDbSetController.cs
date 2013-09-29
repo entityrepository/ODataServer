@@ -6,9 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Diagnostics;
 using System.Linq;
 using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.Model;
+using EntityRepository.ODataServer.Results;
 using EntityRepository.ODataServer.Routing;
 using EntityRepository.ODataServer.Util;
 using Microsoft.Data.Edm;
@@ -60,9 +62,14 @@ namespace EntityRepository.ODataServer.EF
 
 
 			TDbContext dbContext = Db;
+			dbContext.ChangeTracker.DetectChanges();
 			if (dbContext.ChangeTracker.HasChanges())
 			{
 				dbContext.SaveChanges();
+			}
+			else
+			{
+				Trace.WriteLine("  No changes detected in " + dbContext.GetType().FullName);
 			}
 		}
 
@@ -127,7 +134,7 @@ namespace EntityRepository.ODataServer.EF
 		#endregion
 		#region Navigation properties
 
-		public override CreatedODataResult<TProperty> PostNavigationProperty<TProperty>(TKey key, string navigationProperty, TProperty propertyEntity)
+		public override CreatedItemResult<TProperty> PostNavigationProperty<TProperty>(TKey key, string navigationProperty, TProperty propertyEntity)
 		{
 			TEntity entity = DbSet.Find(key);
 			if (entity == null)
@@ -139,10 +146,19 @@ namespace EntityRepository.ODataServer.EF
 			return PostNavigationProperty(entity, navigationProperty, propertyEntity);
 		}
 
-		public override CreatedODataResult<TProperty> PostNavigationProperty<TProperty>([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity entity, string navigationProperty, TProperty propertyEntity)
+		public override CreatedItemResult<TProperty> PostNavigationProperty<TProperty>([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity entity, string navigationProperty, TProperty propertyEntity)
 		{
-			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(ODataPath);
+			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.GetODataPath());
 			Contract.Assert(navigationProperty == edmNavigationProperty.Name);
+
+			// Add the new propertyEntity to the appropriate DbSet; Find its EntitySet first
+			//IEdmEntityType edmEntityType = edmNavigationProperty.ToEntityType();
+			//IEntitySetMetadata entitySetMetadata = ContainerMetadata.GetEntitySetFor(edmEntityType);
+			//if (entitySetMetadata == null)
+			//{
+			//	throw new InvalidOperationException("Unable to find the entityset for entity type " + edmEntityType.ToTraceString());
+			//}
+			//Db.AddEntity(entitySetMetadata.Name, propertyEntity);
 
 			if (edmNavigationProperty.Type.IsCollection())
 			{
@@ -177,7 +193,7 @@ namespace EntityRepository.ODataServer.EF
 
 		public override void CreateLink([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity entity, string navigationProperty, [FromBody] Uri link)
 		{
-			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(ODataPath);
+			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.GetODataPath());
 			Contract.Assert(navigationProperty == edmNavigationProperty.Name);
 
 			// Fetch the linked object either via a ChangeSet/Content-ID reference, or by fetching it from the database.

@@ -56,9 +56,15 @@ namespace EntityRepository.ODataServer.EF
 			return _entityTypes.SingleOrDefault(et => et.ClrType == clrType);
 		}
 
-		public IEntityTypeMetadata GetEntityType(IEdmStructuredType edmEntityType)
+		public IEntityTypeMetadata GetEntityType(IEdmSchemaType edmSchemaType)
 		{
-			return _entityTypes.SingleOrDefault(et => et.EdmType.IsEquivalentTo(edmEntityType));
+			return _entityTypes.SingleOrDefault(et =>
+			{
+				IEdmEntityType edmType = et.EdmType;
+				return edmType.TypeKind == edmSchemaType.TypeKind
+				       && edmType.Name == edmSchemaType.Name
+					   && ((edmType.Namespace == edmSchemaType.Namespace) || (Namespace == edmSchemaType.Namespace) || (et.ClrType.Namespace == edmSchemaType.Namespace));
+			});
 		}
 
 		public IEntitySetMetadata GetEntitySet(string entitySetName)
@@ -76,9 +82,14 @@ namespace EntityRepository.ODataServer.EF
 			return _entitySets.SingleOrDefault(es => es.ElementTypeMetadata.ClrType == entityTypeMetadata.ClrType);
 		}
 
-		public IEntitySetMetadata GetEntitySetFor(IEdmStructuredType edmEntityType)
+		public IEntitySetMetadata GetEntitySetFor(IEdmSchemaType edmSchemaType)
 		{
-			return _entitySets.SingleOrDefault(es => es.EdmEntitySet.ElementType.IsEquivalentTo(edmEntityType));
+			IEntityTypeMetadata entityType = GetEntityType(edmSchemaType);
+			if (entityType == null)
+			{
+				return null;
+			}
+			return _entitySets.SingleOrDefault(es => es.ElementTypeHierarchyMetadata.Contains(entityType));
 		}
 
 		#endregion

@@ -8,6 +8,7 @@
 
 using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.Model;
+using EntityRepository.ODataServer.Results;
 using EntityRepository.ODataServer.Routing;
 using EntityRepository.ODataServer.Util;
 using Microsoft.Data.Edm;
@@ -68,7 +69,7 @@ namespace EntityRepository.ODataServer
 			get { return _entitySetMetadata; }
 		}
 
-		protected IContainerMetadata ContainerMetadata
+		protected internal override IContainerMetadata ContainerMetadata
 		{
 			get { return _entitySetMetadata.ContainerMetadata; }
 		}
@@ -76,17 +77,6 @@ namespace EntityRepository.ODataServer
 		protected virtual ODataValidationSettings QueryValidationSettings
 		{
 			get { return _queryValidationSettings; }
-		}
-
-		/// <summary>
-		/// Gets the OData path of the current request.
-		/// </summary>
-		public ODataPath ODataPath
-		{
-			get
-			{
-				return EntitySetControllerHelpers.GetODataPath(this);
-			}
 		}
 
 		#endregion
@@ -149,7 +139,7 @@ namespace EntityRepository.ODataServer
 		/// </summary>
 		/// <param name="entity">The entity to insert into the entity set.</param>
 		/// <returns>The response message to send back to the client.</returns>
-		public virtual CreatedODataResult<TEntity> Post([FromBody] TEntity entity)
+		public virtual CreatedItemResult<TEntity> Post([FromBody] TEntity entity)
 		{
 			Contract.Requires<ArgumentNullException>(entity != null);
 
@@ -164,7 +154,7 @@ namespace EntityRepository.ODataServer
 		/// <param name="key">The entity key of the entity to replace.</param>
 		/// <param name="update">The updated entity.</param>
 		/// <returns>The response message to send back to the client.</returns>
-		public virtual UpdatedODataResult<TEntity> Put([FromODataUri] TKey key, [FromBody] TEntity update)
+		public virtual UpdatedItemResult<TEntity> Put([FromODataUri] TKey key, [FromBody] TEntity update)
 		{
 			Contract.Requires<ArgumentNullException>(update != null);
 
@@ -181,13 +171,13 @@ namespace EntityRepository.ODataServer
 		/// <returns>The response message to send back to the client.</returns>
 		[AcceptVerbs("PATCH", "MERGE")]
 		[SuppressMessage("Microsoft.Naming", "CA1719:ParameterNamesShouldNotMatchMemberNames", MessageId = "1#", Justification = "Patch is the action name by WebAPI convention.")]
-		public virtual HttpResponseMessage Patch([FromODataUri] TKey key, Delta<TEntity> patch)
+		public virtual UpdatedItemResult<TEntity> Patch([FromODataUri] TKey key, Delta<TEntity> patch)
 		{
 			Contract.Requires<ArgumentNullException>(patch != null);
 
 			TEntity patchedEntity = PatchEntity(key, patch);
 
-			return EntitySetControllerHelpers.PatchResponse(Request, patchedEntity);
+			return Updated(patchedEntity);
 		}
 
 		/// <summary>
@@ -274,7 +264,7 @@ namespace EntityRepository.ODataServer
 
 			queryOptions.Validate(QueryValidationSettings);
 
-			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(ODataPath);
+			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.GetODataPath());
 			Contract.Assert(navigationProperty == edmNavigationProperty.Name);
 
 			IQueryable<TEntity> query = GetEntityWithNavigationPropertyQuery<TProperty>(key, edmNavigationProperty);
@@ -294,7 +284,7 @@ namespace EntityRepository.ODataServer
 		/// <param name="navigationProperty"></param>
 		/// <param name="propertyEntity"></param>
 		/// <returns></returns>
-		public virtual CreatedODataResult<TProperty> PostNavigationProperty<TProperty>([FromODataUri] TKey key, string navigationProperty, [FromBody] TProperty propertyEntity)
+		public virtual CreatedItemResult<TProperty> PostNavigationProperty<TProperty>([FromODataUri] TKey key, string navigationProperty, [FromBody] TProperty propertyEntity)
 			where TProperty : class
 		{
 			Contract.Requires<ArgumentNullException>(navigationProperty != null);
@@ -311,7 +301,7 @@ namespace EntityRepository.ODataServer
 		/// <param name="navigationProperty"></param>
 		/// <param name="propertyEntity"></param>
 		/// <returns></returns>
-		public virtual CreatedODataResult<TProperty> PostNavigationProperty<TProperty>([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity changeSetEntity, string navigationProperty, [FromBody] TProperty propertyEntity)
+		public virtual CreatedItemResult<TProperty> PostNavigationProperty<TProperty>([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity changeSetEntity, string navigationProperty, [FromBody] TProperty propertyEntity)
 			where TProperty : class
 		{
 			Contract.Requires<ArgumentNullException>(changeSetEntity != null);

@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using System.Web.Http.Dependencies;
 using System.Web.Http.Hosting;
 using System.Web.Http.OData.Batch;
+using EntityRepository.ODataServer.Results;
 using EntityRepository.ODataServer.Util;
 
 namespace EntityRepository.ODataServer.Batch
@@ -76,7 +77,8 @@ namespace EntityRepository.ODataServer.Batch
 				}
 
 				// Execute the changeset completion actions
-				await ExecuteChangeSetCompletionActions(responses);
+				await ExecuteChangeSetCompletionActions(responses, cancellationToken);
+
 				changeSetResponse = new ChangeSetResponseItem(responses);
 			}
 			catch
@@ -128,7 +130,7 @@ namespace EntityRepository.ODataServer.Batch
 			}
 		}
 
-		private async Task ExecuteChangeSetCompletionActions(List<HttpResponseMessage> responses)
+		private async Task ExecuteChangeSetCompletionActions(List<HttpResponseMessage> responses, CancellationToken cancellationToken)
 		{
 			HttpResponseMessage firstResponseMessage = responses.FirstOrDefault();
 			if (firstResponseMessage == null)
@@ -141,11 +143,23 @@ namespace EntityRepository.ODataServer.Batch
 			// Therefore the changeset fails if the first response is not successful
 			if (firstResponseMessage.IsSuccessStatusCode)
 			{
-				await _changeSetContext.AsyncExecuteSuccessActions();
+				await _changeSetContext.AsyncExecuteSuccessActions(cancellationToken);
 			}
 			else
 			{
-				await _changeSetContext.AsyncExecuteFailureActions();
+				await _changeSetContext.AsyncExecuteFailureActions(cancellationToken);
+			}
+
+			// Replace any PendingHttpResponseMessage objects with a "real" response
+			for (int i = 0; i < responses.Count; ++i)
+			{
+				HttpResponseMessage httpResponse = responses[i];
+				PendingHttpResponseMessage pendingHttpResponse = httpResponse as PendingHttpResponseMessage;
+				if (pendingHttpResponse != null)
+				{
+					HttpResponseMessage finalResponse = await pendingHttpResponse.PendingResult.CreateFinalResponse(cancellationToken);
+					responses[i] = finalResponse;
+				}
 			}
 		}
 

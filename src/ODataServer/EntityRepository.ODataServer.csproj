@@ -163,6 +163,11 @@
     <Compile Include="Model\INavigationMetadata.cs" />
     <Compile Include="Model\NavigationMetadata.cs" />
     <Compile Include="ODataController.cs" />
+    <Compile Include="Results\ChangeSetItemResult.cs" />
+    <Compile Include="Results\CreatedItemResult.cs" />
+    <Compile Include="Results\IDelayedActionResult.cs" />
+    <Compile Include="Results\PendingHttpResponseMessage.cs" />
+    <Compile Include="Results\UpdatedItemResult.cs" />
     <Compile Include="Routing\ActionMapExtensions.cs" />
     <Compile Include="Routing\EntityRepositoryActionSelector.cs" />
     <Compile Include="Routing\RenamedReflectedHttpActionDescriptor.cs" />

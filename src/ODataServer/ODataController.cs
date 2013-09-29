@@ -13,6 +13,8 @@ using System.Web.Http.Description;
 using System.Web.Http.OData;
 using System.Web.Http.OData.Results;
 using EntityRepository.ODataServer.Batch;
+using EntityRepository.ODataServer.Model;
+using EntityRepository.ODataServer.Results;
 using EntityRepository.ODataServer.Routing;
 
 namespace EntityRepository.ODataServer
@@ -29,13 +31,19 @@ namespace EntityRepository.ODataServer
 	public abstract class ODataController : ApiController
 	{
 		/// <summary>
+		/// Returns the <see cref="IContainerMetadata"/> instance associated with this controller.  This instance
+		/// is normally passed into the derived controller class's constructor via dependency injection.
+		/// </summary>
+		protected internal abstract IContainerMetadata ContainerMetadata { get; }
+
+		/// <summary>
 		/// Creates an action result with the specified values that is a response to a POST operation with an entity 
 		/// to an entity set.
 		/// </summary>
 		/// <typeparam name="TEntity">The created entity type.</typeparam>
 		/// <param name="entity">The created entity.</param>
 		/// <returns>A <see cref="CreatedODataResult{T}"/> with the specified values.</returns>
-		protected virtual CreatedODataResult<TEntity> Created<TEntity>(TEntity entity)
+		protected virtual CreatedItemResult<TEntity> Created<TEntity>(TEntity entity)
 		{
 			if (entity == null)
 			{
@@ -44,7 +52,7 @@ namespace EntityRepository.ODataServer
 
 			Request.TrySetChangeSetContentIdEntity(entity);
 
-			return new CreatedODataResult<TEntity>(entity, this);
+			return new CreatedItemResult<TEntity>(entity, this);
 		}
 
 		/// <summary>
@@ -54,14 +62,14 @@ namespace EntityRepository.ODataServer
 		/// <typeparam name="TEntity">The updated entity type.</typeparam>
 		/// <param name="entity">The updated entity.</param>
 		/// <returns>An <see cref="UpdatedODataResult{TEntity}"/> with the specified values.</returns>
-		protected virtual UpdatedODataResult<TEntity> Updated<TEntity>(TEntity entity)
+		protected virtual UpdatedItemResult<TEntity> Updated<TEntity>(TEntity entity)
 		{
 			if (entity == null)
 			{
 				throw new ArgumentNullException("entity");
 			}
 
-			return new UpdatedODataResult<TEntity>(entity, this);
+			return new UpdatedItemResult<TEntity>(entity, this);
 		}
 	}
 

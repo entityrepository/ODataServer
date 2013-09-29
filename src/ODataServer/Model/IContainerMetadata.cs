@@ -32,12 +32,12 @@ namespace EntityRepository.ODataServer.Model
 		IEnumerable<IEntitySetMetadata> EntitySets { get; }
 
 		IEntityTypeMetadata GetEntityType(Type clrType);
-		IEntityTypeMetadata GetEntityType(IEdmStructuredType edmEntityType);
+		IEntityTypeMetadata GetEntityType(IEdmSchemaType edmSchemaType);
 
 		IEntitySetMetadata GetEntitySet(string entitySetName);
 		IEntitySetMetadata GetEntitySetFor(Type clrType);
 		IEntitySetMetadata GetEntitySetFor(IEntityTypeMetadata entityTypeMetadata);
-		IEntitySetMetadata GetEntitySetFor(IEdmStructuredType edmEntityType);
+		IEntitySetMetadata GetEntitySetFor(IEdmSchemaType edmSchemaType);
 
 	}
 
@@ -125,9 +125,9 @@ namespace EntityRepository.ODataServer.Model
 			throw new NotImplementedException();
 		}
 
-		public IEntityTypeMetadata GetEntityType(IEdmStructuredType edmEntityType)
+		public IEntityTypeMetadata GetEntityType(IEdmSchemaType edmSchemaType)
 		{
-			Contract.Requires<ArgumentNullException>(edmEntityType != null);
+			Contract.Requires<ArgumentNullException>(edmSchemaType != null);
 
 			throw new NotImplementedException();
 		}
@@ -153,9 +153,9 @@ namespace EntityRepository.ODataServer.Model
 			throw new NotImplementedException();
 		}
 
-		public IEntitySetMetadata GetEntitySetFor(IEdmStructuredType edmEntityType)
+		public IEntitySetMetadata GetEntitySetFor(IEdmSchemaType edmSchemaType)
 		{
-			Contract.Requires<ArgumentNullException>(edmEntityType != null);
+			Contract.Requires<ArgumentNullException>(edmSchemaType != null);
 
 			throw new NotImplementedException();
 		}
