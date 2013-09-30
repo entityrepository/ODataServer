@@ -15,4 +15,13 @@
 		<copyright>Copyright 2013</copyright>
 		<tags>EntityRepository Web API OData EF EntityFramework DataService WCF data services</tags>
 	</metadata>
+	
+	<!-- Include the dll, pdb, xml (xml docs). -->
+	<files>
+		<!-- DLLs and XML comments are implicitly added -->
+		<file src="$TargetDir$$id$.pdb" target="lib\net45" />
+		<!-- Code-contracts reference assembly -->
+		<file src="$TargetDir$\CodeContracts\$id$.Contracts.*" target="lib\net45\CodeContracts" />
+	</files>
+	
 </package>
