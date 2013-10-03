@@ -16,7 +16,7 @@ namespace EntityRepository.ODataServer.Util
 	/// <summary>
 	/// Extension methods for collection types.
 	/// </summary>
-	public static class CollectionExtensions
+	internal static class CollectionExtensions
 	{
 
 		/// <summary>

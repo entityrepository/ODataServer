@@ -16,7 +16,7 @@ namespace EntityRepository.ODataServer.Util
 	/// <summary>
 	/// Extension methods for reflection.
 	/// </summary>
-	public static class ReflectionExtensions
+	internal static class ReflectionExtensions
 	{
 
 		/// <summary>
