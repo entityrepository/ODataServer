@@ -11,9 +11,16 @@
 		<iconUrl>https://entityrepository.codeplex.com/favicon.ico</iconUrl>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<description>$description$</description>
-		<releaseNotes>Beta build: Write operations not yet supported.</releaseNotes>
 		<copyright>Copyright 2013</copyright>
 		<tags>EntityRepository Web API OData EF EntityFramework DataService WCF data services</tags>
+		
+		<!-- <releaseNotes>Beta build: Write operations not yet supported.</releaseNotes> -->
+
+		<!-- Explicitly specify which assemblys are referenced when this project is referenced (to not link to the CodeContracts DLL). -->
+		<references>
+			<reference file="$id$.dll" />
+		</references>
+		
 	</metadata>
 	
 	<!-- Include the dll, pdb, xml (xml docs). -->

@@ -30,14 +30,14 @@ namespace Scrum.WebApi
 			var containerMetadata = config.DependencyResolver.Resolve<IContainerMetadata<ScrumDb>>();
 
 			// Configure OData controllers
-			var oDataServiceManager = new ODataServerConfigurer(config, containerMetadata);
+			var oDataServerConfigurer = new ODataServerConfigurer(config, containerMetadata);
 
 			// Just to prove that regular controller classes can be added when customization is needed
-			//oDataServiceConfig.AddEntitySetController("Projects", typeof(Project), typeof(ProjectsController));
-			//oDataServiceManager.AddEntitySetController("Users", typeof(User), typeof(UsersController));
+			//oDataServerConfigurer.AddEntitySetController("Projects", typeof(Project), typeof(ProjectsController));
+			//oDataServerConfigurer.AddEntitySetController("Users", typeof(User), typeof(UsersController));
 
-			oDataServiceManager.AddStandardEntitySetControllers(DbSetControllerSelector);
-			oDataServiceManager.ConfigureODataRoutes(config.Routes, "ODataRoute", ODataRoute, GlobalConfiguration.DefaultServer);
+			oDataServerConfigurer.AddStandardEntitySetControllers(DbSetControllerSelector);
+			oDataServerConfigurer.ConfigureODataRoutes(config.Routes, "ODataRoute", ODataRoute, GlobalConfiguration.DefaultServer);
 		}
 
 		/// <summary>
