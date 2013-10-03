@@ -16,7 +16,7 @@ namespace EntityRepository.ODataServer.Util
 	/// <summary>
 	/// Extension methods for reflection.
 	/// </summary>
-	internal static class ReflectionExtensions
+	public static class ReflectionExtensions
 	{
 
 		/// <summary>
@@ -60,18 +60,7 @@ namespace EntityRepository.ODataServer.Util
 			return IsDerivedFromGenericType(type.BaseType, genericTypeDefinition);
 		}
 
-		/// <summary>
-		/// Returns the generic type parameters for type <paramref name="genericTypeDefinition"/>
-		/// </summary>
-		/// <param name="type"></param>
-		/// <param name="genericTypeDefinition"></param>
-		/// <returns></returns>
-		public static Type[] GetGenericTypeParametersForBaseClass(this Type type, Type genericTypeDefinition)
-		{
-			throw new NotImplementedException();
-		}
-
-		public static object GetPropertyValue(this object instance, string propertyName)
+		internal static object GetPropertyValue(this object instance, string propertyName)
 		{
 			Contract.Requires<ArgumentNullException>(instance != null);
 			Contract.Requires<ArgumentNullException>(propertyName != null);
@@ -79,7 +68,7 @@ namespace EntityRepository.ODataServer.Util
 			return GetPropertyValue(instance.GetType(), instance, propertyName);
 		}
 
-		public static object GetPropertyValue(this Type type, object instance, string propertyName)
+		internal static object GetPropertyValue(this Type type, object instance, string propertyName)
 		{
 			Contract.Requires<ArgumentNullException>(type != null);
 			Contract.Requires<ArgumentNullException>(propertyName != null);
@@ -98,7 +87,7 @@ namespace EntityRepository.ODataServer.Util
 			return propertyInfo.GetValue(instance, null);
 		}
 
-		public static void SetPropertyValue(this object instance, string propertyName, object value)
+		internal static void SetPropertyValue(this object instance, string propertyName, object value)
 		{
 			Contract.Requires<ArgumentNullException>(instance != null);
 			Contract.Requires<ArgumentNullException>(propertyName != null);
@@ -106,7 +95,7 @@ namespace EntityRepository.ODataServer.Util
 			SetPropertyValue(instance.GetType(), instance, propertyName, value);
 		}
 
-		public static void SetPropertyValue(this Type type, object instance, string propertyName, object value)
+		internal static void SetPropertyValue(this Type type, object instance, string propertyName, object value)
 		{
 			Contract.Requires<ArgumentNullException>(type != null);
 			Contract.Requires<ArgumentNullException>(propertyName != null);
@@ -163,7 +152,7 @@ namespace EntityRepository.ODataServer.Util
 		/// <param name="methodName"></param>
 		/// <param name="arguments"></param>
 		/// <returns></returns>
-		public static object InvokeMethod(this object instance, string methodName, params object[] arguments)
+		internal static object InvokeMethod(this object instance, string methodName, params object[] arguments)
 		{
 			Contract.Requires<ArgumentNullException>(instance != null);
 			Contract.Requires<ArgumentNullException>(methodName != null);
@@ -178,7 +167,7 @@ namespace EntityRepository.ODataServer.Util
 		/// <param name="methodName"></param>
 		/// <param name="arguments"></param>
 		/// <returns></returns>
-		public static object InvokeStaticMethod(this Type type, string methodName, params object[] arguments)
+		internal static object InvokeStaticMethod(this Type type, string methodName, params object[] arguments)
 		{
 			Contract.Requires<ArgumentNullException>(type != null);
 			Contract.Requires<ArgumentNullException>(methodName != null);
@@ -196,7 +185,7 @@ namespace EntityRepository.ODataServer.Util
 		/// <param name="genericMethodParameters">The generic type arguments.</param>
 		/// <param name="arguments"></param>
 		/// <returns></returns>
-		public static object InvokeMethod(this Type type, object instance, string methodName, Type[] genericMethodParameters, params object[] arguments)
+		internal static object InvokeMethod(this Type type, object instance, string methodName, Type[] genericMethodParameters, params object[] arguments)
 		{
 			Contract.Requires<ArgumentNullException>(type != null);
 			Contract.Requires<ArgumentNullException>(methodName != null);
@@ -243,7 +232,7 @@ namespace EntityRepository.ODataServer.Util
 		/// </summary>
 		/// <param name="source"></param>
 		/// <param name="destination"></param>
-		public static void CopyPublicPrimitivePropertyValues(object source, object destination)
+		internal static void CopyPublicPrimitivePropertyValues(object source, object destination)
 		{
 			Contract.Requires<ArgumentNullException>(source != null);
 			Contract.Requires<ArgumentNullException>(destination != null);
@@ -277,7 +266,7 @@ namespace EntityRepository.ODataServer.Util
 		/// Edm primitive types are CLR primitie types, or  <see cref="string"/>, <see cref="DateTime"/>, <see cref="Decimal"/>,
 		/// <see cref="Guid"/>, <see cref="DateTimeOffset"/> or <see cref="TimeSpan"/>
 		/// </remarks>
-		public static bool IsEdmPrimitiveType(Type type)
+		internal static bool IsEdmPrimitiveType(Type type)
 		{
 			Contract.Requires<ArgumentNullException>(type != null);
 
