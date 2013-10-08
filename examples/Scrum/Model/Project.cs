@@ -54,25 +54,21 @@ namespace Scrum.Model
 		public ICollection<User> Owners
 		{
 			get { return EnsureCollectionProperty(ref _owners); }
-			set { SetCollectionProperty(ref _owners, value); }
 		}
 
 		public ICollection<ProjectArea> Areas
 		{
 			get { return EnsureCollectionProperty(ref _areas); }
-			set { SetCollectionProperty(ref _areas, value); }
 		}
 
 		public ICollection<ProjectVersion> Versions
 		{
 			get { return EnsureCollectionProperty(ref _versions); }
-			set { SetCollectionProperty(ref _versions, value); }
 		}
 
 		public ICollection<WorkItem> WorkItems
 		{
 			get { return EnsureCollectionProperty(ref _workItems); }
-			set { SetCollectionProperty(ref _workItems, value); }
 		}
 
 	}
