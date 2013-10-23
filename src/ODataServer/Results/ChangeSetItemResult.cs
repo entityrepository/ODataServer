@@ -8,6 +8,7 @@
 
 
 using System.Linq;
+using System.Web.Http.Routing;
 using EntityRepository.ODataServer.Batch;
 using System;
 using System.Collections.Generic;
@@ -48,7 +49,15 @@ namespace EntityRepository.ODataServer.Results
 		/// <param name="controller">The controller from which to obtain the dependencies needed for execution.</param>
 		protected ChangeSetItemResult(T entity, HttpStatusCode statusCode, ApiController controller)
 			: this(new NegotiatedContentResult<T>(statusCode, CheckNull(entity), controller))
-		{}
+		{
+			// This fixup is needed, b/c it's not always populated.  It's not clear if this is my fault,
+			// or a bug in the framework.
+			if (controller.Url == null)
+			{
+				controller.Url = new UrlHelper(controller.Request);
+			}
+			
+		}
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="ChangeSetItemResult{T}"/> class.

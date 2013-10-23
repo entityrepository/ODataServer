@@ -7,24 +7,15 @@
 // -----------------------------------------------------------------------
 
 
+using EntityRepository.ODataServer.Model;
+using Microsoft.Data.OData;
+using Microsoft.Data.OData.Query;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Formatting;
 using System.Web.Http;
-using System.Web.Http.OData;
-using System.Web.Http.OData.Builder;
-using System.Web.Http.OData.Formatter;
-using System.Web.Http.OData.Formatter.Serialization;
-using System.Web.Http.OData.Results;
 using System.Web.Http.OData.Routing;
-using EntityRepository.ODataServer.Batch;
-using EntityRepository.ODataServer.Model;
-using Microsoft.Data.Edm;
-using Microsoft.Data.OData;
-using Microsoft.Data.OData.Query;
 
 namespace EntityRepository.ODataServer.Results
 {
