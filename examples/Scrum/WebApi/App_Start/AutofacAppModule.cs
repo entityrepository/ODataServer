@@ -7,14 +7,9 @@
 // -----------------------------------------------------------------------
 
 using Autofac;
-using EntityRepository.ODataServer;
-using EntityRepository.ODataServer.Autofac;
 using EntityRepository.ODataServer.EF;
 using EntityRepository.ODataServer.Model;
 using Scrum.Dal;
-using System.Web.Http;
-using System.Web.Http.OData;
-using System.Web.Http.OData.Query;
 
 namespace Scrum.WebApi
 {
