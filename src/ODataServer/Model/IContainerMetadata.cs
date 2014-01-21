@@ -23,21 +23,11 @@ namespace EntityRepository.ODataServer.Model
 		string Name { get; set; }
 		string Namespace { get; set; }
 
-		Type ContainerType { get; }
-
 		IEdmModel EdmModel { get; }
 		IEdmEntityContainer EdmContainer { get; }
 
 		IEnumerable<IEntityTypeMetadata> EntityTypes { get; }
 		IEnumerable<IEntitySetMetadata> EntitySets { get; }
-
-		IEntityTypeMetadata GetEntityType(Type clrType);
-		IEntityTypeMetadata GetEntityType(IEdmSchemaType edmSchemaType);
-
-		IEntitySetMetadata GetEntitySet(string entitySetName);
-		IEntitySetMetadata GetEntitySetFor(Type clrType);
-		IEntitySetMetadata GetEntitySetFor(IEntityTypeMetadata entityTypeMetadata);
-		IEntitySetMetadata GetEntitySetFor(IEdmSchemaType edmSchemaType);
 
 	}
 
@@ -115,49 +105,6 @@ namespace EntityRepository.ODataServer.Model
 				Contract.Ensures(Contract.Result<IEnumerable<IEntitySetMetadata>>() != null);
 				throw new NotImplementedException();
 			}
-		}
-
-		public IEntityTypeMetadata GetEntityType(Type clrType)
-		{
-			Contract.Requires<ArgumentNullException>(clrType != null);
-			Contract.Ensures(Contract.Result<IEntityTypeMetadata>() != null);
-
-			throw new NotImplementedException();
-		}
-
-		public IEntityTypeMetadata GetEntityType(IEdmSchemaType edmSchemaType)
-		{
-			Contract.Requires<ArgumentNullException>(edmSchemaType != null);
-
-			throw new NotImplementedException();
-		}
-
-		public IEntitySetMetadata GetEntitySet(string entitySetName)
-		{
-			Contract.Requires<ArgumentException>(!string.IsNullOrWhiteSpace(entitySetName));
-
-			throw new NotImplementedException();
-		}
-
-		public IEntitySetMetadata GetEntitySetFor(Type clrType)
-		{
-			Contract.Requires<ArgumentNullException>(clrType != null);
-
-			throw new NotImplementedException();
-		}
-
-		public IEntitySetMetadata GetEntitySetFor(IEntityTypeMetadata entityTypeMetadata)
-		{
-			Contract.Requires<ArgumentNullException>(entityTypeMetadata != null);
-
-			throw new NotImplementedException();
-		}
-
-		public IEntitySetMetadata GetEntitySetFor(IEdmSchemaType edmSchemaType)
-		{
-			Contract.Requires<ArgumentNullException>(edmSchemaType != null);
-
-			throw new NotImplementedException();
 		}
 
 	}

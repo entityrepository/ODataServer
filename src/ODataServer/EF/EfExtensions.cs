@@ -35,12 +35,11 @@ namespace EntityRepository.ODataServer.EF
 				using (XmlWriter writer = XmlWriter.Create(stream))
 				{
 					EdmxWriter.WriteEdmx(dbContext, writer);
-					writer.Close();
-					stream.Seek(0, SeekOrigin.Begin);
-					using (XmlReader reader = XmlReader.Create(stream))
-					{
-						return Microsoft.Data.Edm.Csdl.EdmxReader.Parse(reader);
-					}
+				}
+				stream.Seek(0, SeekOrigin.Begin);
+				using (XmlReader reader = XmlReader.Create(stream))
+				{
+					return Microsoft.Data.Edm.Csdl.EdmxReader.Parse(reader);
 				}
 			}
 		}

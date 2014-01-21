@@ -33,8 +33,6 @@ namespace EntityRepository.ODataServer.EF
 		{
 			Contract.Requires<ArgumentNullException>(dbContext != null);
 
-			ContainerType = dbContext.GetType();
-
 			InitializeFrom(dbContext, out _entityTypes, out _entitySets, out _edmModel);
 		}
 
@@ -43,54 +41,11 @@ namespace EntityRepository.ODataServer.EF
 		public string Name { get; set; }
 		public string Namespace { get; set; }
 
-		public Type ContainerType { get; private set; }
-
 		public IEdmModel EdmModel { get { return _edmModel; } }
 		public IEdmEntityContainer EdmContainer { get; private set; }
 
 		public IEnumerable<IEntityTypeMetadata> EntityTypes { get { return _entityTypes; } }
 		public IEnumerable<IEntitySetMetadata> EntitySets { get { return _entitySets; } }
-
-		public IEntityTypeMetadata GetEntityType(Type clrType)
-		{
-			return _entityTypes.SingleOrDefault(et => et.ClrType == clrType);
-		}
-
-		public IEntityTypeMetadata GetEntityType(IEdmSchemaType edmSchemaType)
-		{
-			return _entityTypes.SingleOrDefault(et =>
-			{
-				IEdmEntityType edmType = et.EdmType;
-				return edmType.TypeKind == edmSchemaType.TypeKind
-				       && edmType.Name == edmSchemaType.Name
-					   && ((edmType.Namespace == edmSchemaType.Namespace) || (Namespace == edmSchemaType.Namespace) || (et.ClrType.Namespace == edmSchemaType.Namespace));
-			});
-		}
-
-		public IEntitySetMetadata GetEntitySet(string entitySetName)
-		{
-			return _entitySets.SingleOrDefault(es => string.Equals(es.Name, entitySetName, StringComparison.Ordinal));
-		}
-
-		public IEntitySetMetadata GetEntitySetFor(Type clrType)
-		{
-			return _entitySets.SingleOrDefault(es => es.ElementTypeMetadata.ClrType == clrType);
-		}
-
-		public IEntitySetMetadata GetEntitySetFor(IEntityTypeMetadata entityTypeMetadata)
-		{
-			return _entitySets.SingleOrDefault(es => es.ElementTypeMetadata.ClrType == entityTypeMetadata.ClrType);
-		}
-
-		public IEntitySetMetadata GetEntitySetFor(IEdmSchemaType edmSchemaType)
-		{
-			IEntityTypeMetadata entityType = GetEntityType(edmSchemaType);
-			if (entityType == null)
-			{
-				return null;
-			}
-			return _entitySets.SingleOrDefault(es => es.ElementTypeHierarchyMetadata.Contains(entityType));
-		}
 
 		#endregion
 
@@ -144,7 +99,7 @@ namespace EntityRepository.ODataServer.EF
 			{
 				var elementTypeMetadata = entityTypesMetadata.Single(m => m.EdmType == edmEntitySet.ElementType);
 				var elementTypeHierarchy = FindTypeHierarchyFrom(elementTypeMetadata, entityTypesMetadata);
-				entitySetsList.Add(new EntitySetMetadata(this, edmEntitySet, elementTypeMetadata, elementTypeHierarchy));
+				entitySetsList.Add(new EntitySetMetadata(dbContext.GetType(), this, edmEntitySet, elementTypeMetadata, elementTypeHierarchy));
 			}
 			entitySetsMetadata = entitySetsList.ToArray();
 

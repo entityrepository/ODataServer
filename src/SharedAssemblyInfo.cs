@@ -1,7 +1,7 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="SharedAssemblyInfo.cs" company="EntityRepository Contributors" year="2013">
+// <copyright file="SharedAssemblyInfo.cs" company="EntityRepository Contributors" year="2013-2014">
 // This software is part of the EntityRepository library.
-// Copyright © 2013 EntityRepository Contributors
+// Copyright © 2013-2014 EntityRepository Contributors
 // http://entityrepository.codeplex.org/
 // </copyright>
 // -----------------------------------------------------------------------
@@ -37,8 +37,8 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion("0.7.0.0")]
-[assembly: AssemblyFileVersion("0.7.0.0")]
+[assembly: AssemblyVersion("0.8.0.0")]
+[assembly: AssemblyFileVersion("0.8.0.0")]
 
 // Semantic version (http://semver.org) . First 3 numbers must match first 3 numbers of AssemblyVersion and AssemblyFileVersion.
-[assembly: AssemblyInformationalVersion("0.7.0-dev")]
+[assembly: AssemblyInformationalVersion("0.8.0-dev")]

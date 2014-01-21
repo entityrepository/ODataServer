@@ -18,6 +18,10 @@ namespace EntityRepository.ODataServer.Model
 	/// </summary>
 	public interface IEntitySetMetadata
 	{
+		/// <summary>
+		/// The context type for the entityset; or <c>null</c> if no context type exists.
+		/// </summary>
+		Type ContextType { get; }
 		IContainerMetadata ContainerMetadata { get; }
 		string Name { get; }
 		IEdmEntitySet EdmEntitySet { get; }

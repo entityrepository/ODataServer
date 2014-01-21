@@ -16,6 +16,7 @@ using Scrum.Dal;
 using Scrum.Model.Base;
 using System;
 using System.Web.Http;
+using Scrum.WebApi.Models;
 
 namespace Scrum.WebApi
 {
@@ -27,10 +28,12 @@ namespace Scrum.WebApi
 		public static void Register(HttpConfiguration config)
 		{
 			// Pull the container metadata from the DI service
-			var containerMetadata = config.DependencyResolver.Resolve<IContainerMetadata<ScrumDb>>();
+			var scrumDbContainer = config.DependencyResolver.Resolve<IContainerMetadata<ScrumDb>>();
 
 			// Configure OData controllers
-			var oDataServerConfigurer = new ODataServerConfigurer(config, containerMetadata);
+			// NOTE: The use of MultiContainerMetadata is unnecessary - could just be scrumDbContainer without the wrapper.
+			// The only reason to use MultiContainerMetadata here is to test it.
+			var oDataServerConfigurer = new ODataServerConfigurer(config, new MultiContainerMetadata<ODataContainer>(scrumDbContainer));
 
 			// Just to prove that regular controller classes can be added when customization is needed
 			//oDataServerConfigurer.AddEntitySetController("Projects", typeof(Project), typeof(ProjectsController));
@@ -68,4 +71,5 @@ namespace Scrum.WebApi
 		}
 
 	}
+
 }

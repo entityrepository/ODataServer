@@ -90,35 +90,35 @@ namespace EntityRepository.ODataServer
 		}
 
 		/// <summary>
-		/// A function type that returns the instantiable controller type to use for a given <paramref name="entityType"/>, <paramref name="keyType"/>, and <paramref name="containerType"/>
+		/// A function type that returns the instantiable controller type to use for a given <paramref name="entityType"/>, <paramref name="keyType"/>, and <paramref name="contextType"/>
 		/// </summary>
 		/// <param name="entityType"></param>
 		/// <param name="keyTypes"></param>
-		/// <param name="containerType"></param>
+		/// <param name="contextType">A context type for an entityset controller; may be <c>null</c>.</param>
 		/// <returns></returns>
-		public delegate Type ControllerTypeSelector(Type entityType, Type[] keyTypes, Type containerType);
+		public delegate Type ControllerTypeSelector(Type entityType, Type[] keyTypes, Type contextType);
 
 		/// <summary>
 		/// The default implementation of <see cref="ControllerTypeSelector"/>.
 		/// </summary>
 		/// <param name="entityType"></param>
 		/// <param name="keyTypes"></param>
-		/// <param name="containerType"></param>
+		/// <param name="contextType"></param>
 		/// <returns></returns>
-		public static Type DefaultControllerTypeSelector(Type entityType, Type[] keyTypes, Type containerType)
+		public static Type DefaultControllerTypeSelector(Type entityType, Type[] keyTypes, Type contextType)
 		{
-			if (typeof(DbContext).IsAssignableFrom(containerType))
+			if (typeof(DbContext).IsAssignableFrom(contextType))
 			{
 				if (keyTypes.Length != 1)
 				{
 					throw new ArgumentException("No default controller exists that supports multiple keys.");
 				}
 				// Default controller for DbContext containers is EditDbSetController
-				return typeof(EditDbSetController<,,>).MakeGenericType(entityType, keyTypes[0], containerType);
+				return typeof(EditDbSetController<,,>).MakeGenericType(entityType, keyTypes[0], contextType);
 			}
 			else
 			{
-				throw new ArgumentException("No default controller exists for containerType " + containerType.FullName);
+				throw new ArgumentException(string.Format("No default controller exists for contextType {0}, entityType {1}", contextType, entityType));
 			}			
 		}
 
@@ -150,7 +150,7 @@ namespace EntityRepository.ODataServer
 
 					// Determine the controller type
 					Type[] keyTypes = entityTypeMetadata.ClrKeyProperties.Select(prop => prop.PropertyType).ToArray();
-					Type controllerType = controllerTypeSelector(entityTypeMetadata.ClrType, keyTypes, _containerMetadata.ContainerType);
+					Type controllerType = controllerTypeSelector(entityTypeMetadata.ClrType, keyTypes, entitySetMetadata.ContextType);
 
 					AddEntitySetController(entitySetName, entityTypeMetadata.ClrType, controllerType);
 				}

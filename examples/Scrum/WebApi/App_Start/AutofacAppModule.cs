@@ -25,11 +25,7 @@ namespace Scrum.WebApi
 			builder.Register(c => new ScrumDb()).InstancePerLifetimeScope();
 
 			// Required: Register global datamodel metadata
-			using (ScrumDb scrumDb = new ScrumDb())
-			{
-				var containerMetadata = new DbContextMetadata<ScrumDb>(scrumDb);
-				builder.RegisterInstance(containerMetadata).As<IContainerMetadata<ScrumDb>>();
-			}
+			builder.RegisterType<DbContextMetadata<ScrumDb>>().As<IContainerMetadata<ScrumDb>>().SingleInstance();
 
 			// Query validation settings could be specified here
 			//builder.RegisterInstance(new ODataValidationSettings

@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using Microsoft.Data.Edm;
@@ -18,7 +19,7 @@ namespace EntityRepository.ODataServer.Model
 
 		private readonly IEdmEntitySet _edmEntitySet;
 
-		internal EntitySetMetadata(IContainerMetadata container, IEdmEntitySet edmEntitySet, IEntityTypeMetadata entityTypeMetadata, IEntityTypeMetadata[] entityTypeHierarchyMetadata)
+		internal EntitySetMetadata(Type contextType, IContainerMetadata container, IEdmEntitySet edmEntitySet, IEntityTypeMetadata entityTypeMetadata, IEntityTypeMetadata[] entityTypeHierarchyMetadata)
 		{
 			Contract.Assert(container != null);
 			Contract.Assert(edmEntitySet != null);
@@ -26,11 +27,14 @@ namespace EntityRepository.ODataServer.Model
 			Contract.Assert(entityTypeHierarchyMetadata != null);
 			Contract.Assert(entityTypeHierarchyMetadata.Length >= 1);
 
+			ContextType = contextType;
 			ContainerMetadata = container;
 			_edmEntitySet = edmEntitySet;
 			ElementTypeMetadata = entityTypeMetadata;
 			ElementTypeHierarchyMetadata = entityTypeHierarchyMetadata;
 		}
+
+		public Type ContextType { get; private set; }
 
 		public IContainerMetadata ContainerMetadata { get; private set; }
 

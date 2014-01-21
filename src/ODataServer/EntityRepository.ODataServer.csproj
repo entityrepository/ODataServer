@@ -148,10 +148,12 @@
     <Compile Include="Batch\ODataServerBatchHandler.cs" />
     <Compile Include="Batch\ChangeSetExtensions.cs" />
     <Compile Include="EF\EfExtensions.cs" />
+    <Compile Include="Model\ContainerMetadataExtensions.cs" />
     <Compile Include="Model\EntitySetMetadata.cs" />
     <Compile Include="EF\DbContextMetadata.cs" />
     <Compile Include="Model\EntityTypeMetadata.cs" />
     <Compile Include="Model\INavigationMetadata.cs" />
+    <Compile Include="Model\MultiContainerMetadata.cs" />
     <Compile Include="Model\NavigationMetadata.cs" />
     <Compile Include="ODataController.cs" />
     <Compile Include="Results\ChangeSetItemResult.cs" />
