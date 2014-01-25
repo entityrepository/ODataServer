@@ -32,8 +32,8 @@ namespace EntityRepository.ODataServer.EF
 
 		private readonly Lazy<TDbContext> _lazyDb;
 
-		public ReadOnlyDbSetController(Lazy<TDbContext> lazyDbContext, IContainerMetadata<TDbContext> containerMetadata, ODataValidationSettings queryValidationSettings)
-			: base(containerMetadata, queryValidationSettings)
+		public ReadOnlyDbSetController(Lazy<TDbContext> lazyDbContext, IContainerMetadata<TDbContext> containerMetadata, ODataValidationSettings queryValidationSettings, ODataQuerySettings querySettings)
+			: base(containerMetadata, queryValidationSettings, querySettings)
 		{
 			Contract.Requires<ArgumentNullException>(lazyDbContext != null);
 

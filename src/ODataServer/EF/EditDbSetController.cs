@@ -41,8 +41,8 @@ namespace EntityRepository.ODataServer.EF
 		where TDbContext : DbContext
 	{
 
-		public EditDbSetController(Lazy<TDbContext> lazyDbContext, IContainerMetadata<TDbContext> containerMetadata, ODataValidationSettings queryValidationSettings)
-			: base(lazyDbContext, containerMetadata, queryValidationSettings)
+		public EditDbSetController(Lazy<TDbContext> lazyDbContext, IContainerMetadata<TDbContext> containerMetadata, ODataValidationSettings queryValidationSettings, ODataQuerySettings querySettings)
+			: base(lazyDbContext, containerMetadata, queryValidationSettings, querySettings)
 		{}
 
 		protected override void Dispose(bool disposing)

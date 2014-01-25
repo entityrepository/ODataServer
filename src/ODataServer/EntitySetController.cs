@@ -43,13 +43,15 @@ namespace EntityRepository.ODataServer
 
 		private readonly ODataValidationSettings _queryValidationSettings;
 		private readonly IEntitySetMetadata _entitySetMetadata;
+		private readonly ODataQuerySettings _querySettings;
 
 		#region Constructor
 
-		protected EntitySetController(IContainerMetadata containerMetadata, ODataValidationSettings queryValidationSettings)
+		protected EntitySetController(IContainerMetadata containerMetadata, ODataValidationSettings queryValidationSettings, ODataQuerySettings querySettings)
 		{
 			Contract.Requires<ArgumentNullException>(containerMetadata != null);
 			Contract.Requires<ArgumentNullException>(queryValidationSettings != null);
+			Contract.Requires<ArgumentNullException>(querySettings != null);
 
 			_entitySetMetadata = containerMetadata.GetEntitySetFor(typeof(TEntity));
 			if (_entitySetMetadata == null)
@@ -58,6 +60,7 @@ namespace EntityRepository.ODataServer
 			}
 
 			_queryValidationSettings = queryValidationSettings;
+			_querySettings = querySettings;
 		}
 
 		#endregion
@@ -94,7 +97,7 @@ namespace EntityRepository.ODataServer
 			Contract.Requires<ArgumentNullException>(queryOptions != null);
 
 			queryOptions.Validate(QueryValidationSettings);
-			IQueryable queryApplied = queryOptions.ApplyTo(GetBaseQueryable());
+			IQueryable queryApplied = queryOptions.ApplyTo(GetBaseQueryable(), _querySettings);
 
 			// TODO: Make this an async continuation?
 

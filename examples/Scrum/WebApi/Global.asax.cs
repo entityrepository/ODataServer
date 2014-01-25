@@ -24,7 +24,7 @@ namespace Scrum.WebApi
 
 			AutofacConfiguration.Configure(GlobalConfiguration.Configuration, new AutofacAppModule());
 
-			WebApiConfig.Register(GlobalConfiguration.Configuration);
+			GlobalConfiguration.Configure(WebApiConfig.Register);
 			FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
 			//MvcRouteConfig.RegisterRoutes(RouteTable.Routes);
 		}

@@ -37,6 +37,12 @@ namespace EntityRepository.ODataServer.Autofac
 				MaxExpansionDepth = 15,
 				MaxTop = 200
 			}); //.Named<ODataValidationSettings>("Edit");  TODO: Figure out how to separate ODataValidationSettings for Edit controllers vs ReadOnly controllers
+
+			// Default query settings (can be overridden)
+			builder.RegisterInstance(new ODataQuerySettings()
+			                         {
+				                         PageSize = 200
+			                         });
 		}
 		 
 	}
