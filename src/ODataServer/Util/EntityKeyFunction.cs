@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="EntityKeyFunctions.cs" company="EntityRepository Contributors" years="2012-2013">
+// <copyright file="EntityKeyFunction.cs" company="EntityRepository Contributors" years="2012-2013">
 // This software is part of the EntityRepository library.
 // Copyright © 2012-2013 EntityRepository Contributors
 // http://entityrepository.codeplex.org/
@@ -20,11 +20,11 @@ namespace EntityRepository.ODataServer.Util
 	/// <summary>
 	/// Provides a function for determining the key from an entity.  Currently this only works for single property keys.
 	/// </summary>
-	/// <typeparam name="TEntity"></typeparam>
-	/// <typeparam name="TKey"></typeparam>
-	public static class EntityKeyFunctions<TEntity, TKey>
+	/// <typeparam name="TEntity">The entity type</typeparam>
+	/// <typeparam name="TKey">The type of key for <typeparamref name="TEntity"/>.  For single keys, this should be the type of the key.  For multiple keys,
+	/// this should be an object array (<c>object[]</c>).</typeparam>
+	public static class EntityKeyFunction<TEntity, TKey>
 		where TEntity : class
-		where TKey : IEquatable<TKey>
 	{
 		/// <summary>
 		/// Cached EntityKeyFunction.
@@ -82,13 +82,20 @@ namespace EntityRepository.ODataServer.Util
 		{
 			Contract.Requires<ArgumentNullException>(entityTypeMetadata != null);
 			Contract.Requires<ArgumentException>(entityTypeMetadata.ClrKeyProperties != null);
-			Contract.Requires<ArgumentException>(entityTypeMetadata.CountKeyProperties == 1);
 			Contract.Requires<ArgumentException>(typeof(TEntity) == entityTypeMetadata.ClrType, "The TEntity type parameter doesn't match the entity type in the datamodel entitytype.");
-			Contract.Requires<ArgumentException>(typeof(TKey) == entityTypeMetadata.SingleClrKeyProperty.PropertyType, "The TKey type parameter doesn't match the key type in the datamodel entitytype.");
 
 			// Create a lambda expression that returns the property, and compile it
+			Expression<Func<TEntity, TKey>> lambda;
 			ParameterExpression param = Expression.Parameter(entityTypeMetadata.ClrType, "e");
-			var lambda = Expression.Lambda<Func<TEntity, TKey>>(Expression.Property(param, entityTypeMetadata.SingleClrKeyProperty), param);
+			if (entityTypeMetadata.CountKeyProperties == 1)
+			{	// Single key, use a simple expression to return the key property
+				lambda = Expression.Lambda<Func<TEntity, TKey>>(Expression.Property(param, entityTypeMetadata.SingleClrKeyProperty), param);
+			}
+			else
+			{	// Multiple keys, return an object array of the key values
+				var keyProperties = entityTypeMetadata.ClrKeyProperties.Select(property => Expression.Convert(Expression.Property(param, property), typeof(object))); // TypeAs provides an (object) cast aka boxing, needed to convert value types to object
+				lambda = Expression.Lambda<Func<TEntity, TKey>>(Expression.NewArrayInit(typeof(object), keyProperties), param);
+			}
 			Func<TEntity, TKey> func = lambda.Compile();
 			
 			// Store it

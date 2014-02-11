@@ -112,6 +112,8 @@ namespace Scrum.Dal
 		public DbSet<WorkItemPropertyChange> WorkItemPropertyChanges { get; set; }
 		public DbSet<WorkItemTimeLog> WorkItemTimeLog { get; set; }
 
+		public DbSet<WorkItemVersion> WorkItemVersions { get; set; }
+
 		public DbSet<Priority> Priority { get; set; }
 		public DbSet<Status> Status { get; set; }
 
@@ -130,6 +132,8 @@ namespace Scrum.Dal
 			              .Map(manyToManyConfig => manyToManyConfig.ToTable("WorkItemFixVersions"));
 			workItemConfig.HasMany(workItem => workItem.Areas).WithMany()
 			              .Map(manyToManyConfig => manyToManyConfig.ToTable("WorkItemAreas"));
+
+			modelBuilder.Entity<WorkItemVersion>().HasKey(wiv => new { wiv.WorkItemId, wiv.Version });
 
 			modelBuilder.Entity<Project>().HasMany(project => project.Owners).WithMany()
 			            .Map(manyToManyConfig => manyToManyConfig.ToTable("ProjectOwners"));

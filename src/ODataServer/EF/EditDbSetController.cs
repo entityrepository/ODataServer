@@ -37,7 +37,7 @@ namespace EntityRepository.ODataServer.EF
 	public class EditDbSetController<TEntity, TKey, TDbContext>
 		: ReadOnlyDbSetController<TEntity, TKey, TDbContext>
 		where TEntity : class
-		where TKey : IEquatable<TKey>
+		//where TKey : IEquatable<TKey>
 		where TDbContext : DbContext
 	{
 

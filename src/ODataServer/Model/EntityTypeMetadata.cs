@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Reflection;
 using EntityRepository.ODataServer.Util;
 using Microsoft.Data.Edm;
@@ -61,9 +62,17 @@ namespace EntityRepository.ODataServer.Model
 		{
 			Contract.Assert(entityTypeMetadata != null);
 
-			// Build a parameterized EntityKeyFunctions<TEntity, TKey> to obtain the key function
-			Type genericEntityKeyFunctions = typeof(EntityKeyFunctions<,>).MakeGenericType(entityTypeMetadata.ClrType, entityTypeMetadata.SingleClrKeyProperty.PropertyType);
-			return genericEntityKeyFunctions.InvokeStaticMethod("GetUntypedEntityKeyFunction", entityTypeMetadata) as Func<object, object>;
+			// Build a parameterized EntityKeyFunction<TEntity, TKey> to obtain the key function
+			Type genericEntityKeyFunctionType;
+			if (entityTypeMetadata.CountKeyProperties == 1)
+			{	// Use the type of the single key
+				genericEntityKeyFunctionType = typeof(EntityKeyFunction<,>).MakeGenericType(entityTypeMetadata.ClrType, entityTypeMetadata.SingleClrKeyProperty.PropertyType);
+			}
+			else
+			{	// Use object for an anonymous type - needed for multi property keys
+				genericEntityKeyFunctionType = typeof(EntityKeyFunction<,>).MakeGenericType(entityTypeMetadata.ClrType, typeof(object[]));
+			}
+			return genericEntityKeyFunctionType.InvokeStaticMethod("GetUntypedEntityKeyFunction", entityTypeMetadata) as Func<object, object>;
 		}
 	}
 }

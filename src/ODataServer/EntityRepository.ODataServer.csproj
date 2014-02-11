@@ -168,7 +168,7 @@
     <Compile Include="Routing\UseEntityRepositoryActionSelectorAttribute.cs" />
     <Compile Include="Routing\GenericNavigationPropertyRoutingConvention.cs" />
     <Compile Include="Util\CollectionExtensions.cs" />
-    <Compile Include="Util\EntityKeyFunctions.cs" />
+    <Compile Include="Util\EntityKeyFunction.cs" />
     <Compile Include="Model\IContainerMetadataOfT.cs" />
     <Compile Include="Routing\EntityRepositoryControllerSelector.cs" />
     <Compile Include="EntitySetController.cs">

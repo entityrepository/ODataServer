@@ -26,7 +26,7 @@ namespace EntityRepository.ODataServer.EF
 	public class ReadOnlyDbSetController<TEntity, TKey, TDbContext>
 		: EntitySetController<TEntity, TKey>
 		where TEntity : class
-		where TKey : IEquatable<TKey>
+		//where TKey : IEquatable<TKey>
 		where TDbContext : DbContext
 	{
 
@@ -57,7 +57,7 @@ namespace EntityRepository.ODataServer.EF
 
 		protected override TKey GetKey(TEntity entity)
 		{
-			Func<TEntity, TKey> entityKeyFunc = EntityKeyFunctions<TEntity, TKey>.GetEntityKeyFunction(EntitySetMetadata.ElementTypeMetadata);
+			Func<TEntity, TKey> entityKeyFunc = EntityKeyFunction<TEntity, TKey>.GetEntityKeyFunction(EntitySetMetadata.ElementTypeMetadata);
 			return entityKeyFunc(entity);
 		}
 
@@ -74,7 +74,7 @@ namespace EntityRepository.ODataServer.EF
 
 		protected override IQueryable<TEntity> GetEntityByKeyQuery(TKey key)
 		{
-			return EntityKeyFunctions<TEntity, TKey>.QueryWhereKeyMatches(GetBaseQueryable(), key, EntitySetMetadata.ElementTypeMetadata);
+			return EntityKeyFunction<TEntity, TKey>.QueryWhereKeyMatches(GetBaseQueryable(), key, EntitySetMetadata.ElementTypeMetadata);
 		}
 
 		protected override IQueryable<TEntity> GetEntityWithNavigationPropertyQuery<TProperty>(TKey key, IEdmNavigationProperty edmNavigationProperty)

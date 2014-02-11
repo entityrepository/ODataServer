@@ -126,6 +126,7 @@
     <Compile Include="WorkItemMessage.cs" />
     <Compile Include="WorkItemPropertyChange.cs" />
     <Compile Include="WorkItemTimeLog.cs" />
+    <Compile Include="WorkItemVersion.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

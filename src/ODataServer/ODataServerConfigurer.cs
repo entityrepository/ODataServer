@@ -152,7 +152,10 @@ namespace EntityRepository.ODataServer
 					Type[] keyTypes = entityTypeMetadata.ClrKeyProperties.Select(prop => prop.PropertyType).ToArray();
 					Type controllerType = controllerTypeSelector(entityTypeMetadata.ClrType, keyTypes, entitySetMetadata.ContextType);
 
-					AddEntitySetController(entitySetName, entityTypeMetadata.ClrType, controllerType);
+					if (controllerType != null)
+					{
+						AddEntitySetController(entitySetName, entityTypeMetadata.ClrType, controllerType);
+					}
 				}
 			}
 		}

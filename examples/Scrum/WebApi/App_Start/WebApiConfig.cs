@@ -55,7 +55,9 @@ namespace Scrum.WebApi
 		{
 			if (keyTypes.Length != 1)
 			{
-				throw new ArgumentException("No default controller exists that supports multiple keys.");
+				// Hide the entity type by returning null
+				return null;
+				// throw new ArgumentException("No default controller exists that supports multiple keys.");
 			}
 
 			if (entityType.IsDerivedFromGenericType(typeof(NamedDbEnum<,>)))
