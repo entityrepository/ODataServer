@@ -27,6 +27,18 @@ namespace Scrum.WebApi
 
 		public static void Register(HttpConfiguration config)
 		{
+#if DEBUG
+			config.EnableSystemDiagnosticsTracing();
+#endif
+
+			// Ensures that this works with other attribute API routes
+			config.MapHttpAttributeRoutes();
+
+			ConfigureODataService(config);
+		}
+
+		private static void ConfigureODataService(HttpConfiguration config)
+		{
 			// Pull the container metadata from the DI service
 			var scrumDbContainer = config.DependencyResolver.Resolve<IContainerMetadata<ScrumDb>>();
 

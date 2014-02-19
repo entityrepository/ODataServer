@@ -58,7 +58,7 @@ namespace EntityRepository.ODataServer.Routing
 		}
 
 		/// <summary>
-		/// 
+		/// Adds the specified controller as a managed odata controller.
 		/// </summary>
 		/// <param name="entitySetName"></param>
 		/// <param name="httpControllerDescriptor"></param>
@@ -81,7 +81,23 @@ namespace EntityRepository.ODataServer.Routing
 		/// </summary>
 		public IDictionary<string, HttpControllerDescriptor> GetFallbackControllerMapping()
 		{
-			return _fallbackControllerSelector.GetControllerMapping();
+			try
+			{
+				return _fallbackControllerSelector.GetControllerMapping();
+			}
+			catch (InvalidOperationException invalidOperationExcp)
+			{
+				if (invalidOperationExcp.Message.Contains("ValueFactory"))
+				{
+					// This occurs due to an infinite loop in initialization of DefaultHttpControllerSelector
+					// Swallow the exception and return an empty map.
+					return new Dictionary<string, HttpControllerDescriptor>();
+				}
+				else
+				{
+					throw;
+				}
+			}
 		}
 
 		public virtual string GetControllerName(HttpRequestMessage request)
@@ -97,7 +113,7 @@ namespace EntityRepository.ODataServer.Routing
 			// Look up controller in route data
 			object controllerName = null;
 			routeData.Values.TryGetValue(ControllerKey, out controllerName);
-			return controllerName == null ? "" : controllerName.ToString();
+			return controllerName == null ? null : controllerName.ToString();
 		}
 
 		#region IHttpControllerSelector Members
@@ -105,7 +121,7 @@ namespace EntityRepository.ODataServer.Routing
 		public IDictionary<string, HttpControllerDescriptor> GetControllerMapping()
 		{
 			// Combine _fallbackControllerSelector's controller list and _managedControllers
-			var controllerMapping = new Dictionary<string, HttpControllerDescriptor>(_fallbackControllerSelector.GetControllerMapping(), StringComparer.OrdinalIgnoreCase);
+			var controllerMapping = new Dictionary<string, HttpControllerDescriptor>(GetFallbackControllerMapping(), StringComparer.OrdinalIgnoreCase);
 			foreach (var kvp in _managedControllers)
 			{
 				controllerMapping.Add(kvp.Key, kvp.Value);
@@ -118,8 +134,7 @@ namespace EntityRepository.ODataServer.Routing
 			string controllerName = GetControllerName(request);
 			if (String.IsNullOrEmpty(controllerName))
 			{
-				throw new HttpResponseException(request.CreateErrorResponse(HttpStatusCode.NotFound,
-																			string.Format("Resource not found: {0}", request.RequestUri)));
+				return _fallbackControllerSelector.SelectController(request);
 			}
 
 			HttpControllerDescriptor controllerDescriptor;
