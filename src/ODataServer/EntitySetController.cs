@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Web.Http.OData.Extensions;
 using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Results;
@@ -267,7 +268,7 @@ namespace EntityRepository.ODataServer
 
 			queryOptions.Validate(QueryValidationSettings);
 
-			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.GetODataPath());
+			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.ODataProperties().Path);
 			Contract.Assert(navigationProperty == edmNavigationProperty.Name);
 
 			IQueryable<TEntity> query = GetEntityWithNavigationPropertyQuery<TProperty>(key, edmNavigationProperty);

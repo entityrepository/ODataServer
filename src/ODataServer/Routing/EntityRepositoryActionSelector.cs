@@ -16,6 +16,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Web.Http;
 using System.Web.Http.Controllers;
+using System.Web.Http.OData.Extensions;
 using System.Web.Http.OData.Routing;
 using System.Web.Http.OData.Routing.Conventions;
 using System.Web.Http.Routing;
@@ -94,8 +95,8 @@ namespace EntityRepository.ODataServer.Routing
 			}
 
 			HttpRequestMessage request = controllerContext.Request;
-			ODataPath odataPath = request.GetODataPath();
-			IEnumerable<IODataRoutingConvention> routingConventions = request.GetODataRoutingConventions();
+			ODataPath odataPath = request.ODataProperties().Path;
+			IEnumerable<IODataRoutingConvention> routingConventions = request.ODataProperties().RoutingConventions;
 			IHttpRouteData routeData = controllerContext.RouteData;
 
 			if (odataPath == null || routingConventions == null || routeData.Values.ContainsKey(ODataRouteConstants.Action))

@@ -18,6 +18,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Web.Http;
 using System.Web.Http.OData;
+using System.Web.Http.OData.Extensions;
 using System.Web.Http.OData.Query;
 using System.Web.Http.OData.Routing;
 using System.Web.Http.Routing;
@@ -287,7 +288,7 @@ namespace EntityRepository.ODataServer
 			// If the GET request matches the route, use the path segments to find the key.
 			if (routeData != null)
 			{
-				ODataPath path = tmpRequest.GetODataPath();
+				ODataPath path = tmpRequest.ODataProperties().Path;
 				if (path.PathTemplate == "~/entityset/key")
 				{
 					entitySet = path.EntitySet;
@@ -295,7 +296,7 @@ namespace EntityRepository.ODataServer
 					if (keySegment != null)
 					{
 						// Convert the segment into the key type.
-						key = ODataUriUtils.ConvertFromUriLiteral(keySegment.Value, ODataVersion.V3, request.GetEdmModel(), entitySet.GetSingleKeyType());
+						key = ODataUriUtils.ConvertFromUriLiteral(keySegment.Value, ODataVersion.V3, request.ODataProperties().Model, entitySet.GetSingleKeyType());
 						return true;
 					}
 				}

@@ -89,6 +89,8 @@ namespace EntityRepository.ODataServer.EF
 			{
 				EntityType entityType = cSpaceItems.OfType<EntityType>().Single(et => et.Name == edmEntityType.Name);
 				Type clrEntityType = entityType.GetClrType();
+				Contract.Assert(clrEntityType != null, "Unable to find ClrType of EDM conceptual type " + entityType.ToString());
+
 				var clrKeyProperties = entityType.KeyProperties.Select(ep => ep.GetClrPropertyInfo()).ToArray();
 				entityTypesList.Add(new EntityTypeMetadata(edmEntityType, clrEntityType, clrKeyProperties));
 			}

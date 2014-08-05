@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Web.Http.OData.Extensions;
 using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Results;
@@ -146,7 +147,7 @@ namespace EntityRepository.ODataServer.EF
 
 		public override CreatedItemResult<TProperty> PostNavigationProperty<TProperty>([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity entity, string navigationProperty, TProperty propertyEntity)
 		{
-			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.GetODataPath());
+			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.ODataProperties().Path);
 			Contract.Assert(navigationProperty == edmNavigationProperty.Name);
 
 			// Add the new propertyEntity to the appropriate DbSet; Find its EntitySet first
@@ -191,7 +192,7 @@ namespace EntityRepository.ODataServer.EF
 
 		public override void CreateLink([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity entity, string navigationProperty, [FromBody] Uri link)
 		{
-			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.GetODataPath());
+			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.ODataProperties().Path);
 			Contract.Assert(navigationProperty == edmNavigationProperty.Name);
 
 			// Fetch the linked object either via a ChangeSet/Content-ID reference, or by fetching it from the database.

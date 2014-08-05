@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 
+using System.Web.Http.OData.Extensions;
 using EntityRepository.ODataServer.Model;
 using Microsoft.Data.OData;
 using Microsoft.Data.OData.Query;
@@ -83,9 +84,9 @@ namespace EntityRepository.ODataServer.Results
 			}
 
 			object keyValue = entityTypeMetadata.SingleClrKeyProperty.GetValue(Entity);
-			string keyString = ODataUriUtils.ConvertToUriLiteral(keyValue, ODataVersion.V3, Request.GetEdmModel());
+			string keyString = ODataUriUtils.ConvertToUriLiteral(keyValue, ODataVersion.V3, Request.ODataProperties().Model);
 
-			string oDataLink = _controller.Url.ODataLink(new EntitySetPathSegment(entitySetMetadata.Name), new KeyValuePathSegment(keyString));
+			string oDataLink = _controller.Url.CreateODataLink(new EntitySetPathSegment(entitySetMetadata.Name), new KeyValuePathSegment(keyString));
 			return new Uri(oDataLink);
 		}
 

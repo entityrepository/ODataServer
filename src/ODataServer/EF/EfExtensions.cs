@@ -27,6 +27,8 @@ namespace EntityRepository.ODataServer.EF
 	public static class EfExtensions
 	{
 
+		private const string c_clrTypeMetadataKey = "http://schemas.microsoft.com/ado/2013/11/edm/customannotation:ClrType";
+
 		public static IEdmModel GetEdmModel(this DbContext dbContext)
 		{
 			// From https://gist.github.com/raghuramn/5864013
@@ -51,7 +53,7 @@ namespace EntityRepository.ODataServer.EF
 		/// <returns></returns>
 		public static Type GetClrType(this EdmType conceptualEdmType)
 		{
-			MetadataProperty clrTypeMetadata = conceptualEdmType.MetadataProperties.SingleOrDefault(p => p.Name.Equals("ClrType"));
+			MetadataProperty clrTypeMetadata = conceptualEdmType.MetadataProperties.SingleOrDefault(p => p.Name.Equals(c_clrTypeMetadataKey));
 			if (clrTypeMetadata == null)
 			{
 				return null;

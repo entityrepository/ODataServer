@@ -43,7 +43,7 @@ namespace Scrum.WebApi.Controllers
 			base.Dispose(disposing);
 		}
 
-		[Queryable]
+		[EnableQuery]
 		public override IQueryable<User> Get()
 		{
 			return Db.Users;

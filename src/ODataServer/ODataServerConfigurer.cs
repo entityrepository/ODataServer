@@ -8,6 +8,7 @@
 
 using System.Threading;
 using System.Web.Http.OData.Batch;
+using System.Web.Http.OData.Extensions;
 using System.Web.Http.OData.Routing;
 using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.EF;
@@ -169,19 +170,18 @@ namespace EntityRepository.ODataServer
 		/// <param name="httpServer"></param>
 		public void ConfigureODataRoutes(HttpRouteCollection routes, string routeName, string routePrefix, HttpServer httpServer)
 		{
-			routes.MapODataRoute(routeName,
-			                     routePrefix,
-			                     BuildEdmModel(),
-			                     new DefaultODataPathHandler(),
-			                     GetRoutingConventions(),
-			                     new ODataServerBatchHandler(httpServer));
+			routes.MapODataServiceRoute(routeName,
+			                            routePrefix,
+			                            BuildEdmModel(),
+			                            new DefaultODataPathHandler(),
+			                            GetRoutingConventions(),
+			                            new ODataServerBatchHandler(httpServer));
 		}
 
 
 		/// <summary>
 		/// Builds the <see cref="IEdmModel"/> for the odata service based on the entityset controllers that have been configured.
 		/// </summary>
-		/// <param name="edmNamespace"></param>
 		/// <returns></returns>
 		public IEdmModel BuildEdmModel()
 		{
