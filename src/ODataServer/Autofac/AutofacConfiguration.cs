@@ -9,7 +9,7 @@
 
 using Autofac;
 using Autofac.Core;
-using System.Collections.Generic;
+using Autofac.Integration.WebApi;
 using System.Web.Http;
 
 namespace EntityRepository.ODataServer.Autofac

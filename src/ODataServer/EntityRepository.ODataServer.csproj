@@ -116,6 +116,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Autofac.3.5.0\lib\net40\Autofac.dll</HintPath>
     </Reference>
+    <Reference Include="Autofac.Integration.WebApi">
+      <HintPath>..\..\..\..\code\Core\trunk\packages\Autofac.WebApi2.3.3.3\lib\net45\Autofac.Integration.WebApi.dll</HintPath>
+    </Reference>
     <Reference Include="EntityFramework">
       <HintPath>..\..\packages\EntityFramework.6.1.1\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
@@ -159,8 +162,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Autofac\AutofacConfiguration.cs" />
-    <Compile Include="Autofac\AutofacWebApiDependencyResolver.cs" />
-    <Compile Include="Autofac\AutofacWebApiDependencyScope.cs" />
     <Compile Include="Autofac\ODataServiceModule.cs" />
     <Compile Include="Batch\ChangeSetContext.cs" />
     <Compile Include="Batch\ChangeSetEntityModelBinder.cs" />
@@ -188,6 +189,13 @@
     <Compile Include="Routing\RoutingExtensions.cs" />
     <Compile Include="Routing\UseEntityRepositoryActionSelectorAttribute.cs" />
     <Compile Include="Routing\GenericNavigationPropertyRoutingConvention.cs" />
+    <Compile Include="UISchema\DefaultUiMetadataSource.cs" />
+    <Compile Include="UISchema\IUiMetadataSource.cs" />
+    <Compile Include="UISchema\NavigationProperty.cs" />
+    <Compile Include="UISchema\Property.cs" />
+    <Compile Include="UISchema\EntitySet.cs" />
+    <Compile Include="UISchema\UiSchemaController.cs" />
+    <Compile Include="UISchema\ValueProperty.cs" />
     <Compile Include="Util\CollectionExtensions.cs" />
     <Compile Include="Util\EntityKeyFunction.cs" />
     <Compile Include="Model\IContainerMetadataOfT.cs" />
