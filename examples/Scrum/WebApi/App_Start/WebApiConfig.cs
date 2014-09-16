@@ -41,6 +41,10 @@ namespace Scrum.WebApi
 		{
 			// Pull the container metadata from the DI service
 			var scrumDbContainer = config.DependencyResolver.Resolve<IContainerMetadata<ScrumDb>>();
+			if (scrumDbContainer == null)
+			{
+				throw new ArgumentException("IContainerMetadata<ScrumDb> could not be resolved from HttpConfiguration.DependencyResolver.");
+			}
 
 			// Configure OData controllers
 			// NOTE: The use of MultiContainerMetadata is unnecessary - could just be scrumDbContainer without the wrapper.

@@ -30,6 +30,7 @@ namespace EntityRepository.ODataServer.Model
 		{
 			Contract.Requires<ArgumentNullException>(innerContainers != null);
 			Contract.Requires<ArgumentException>(innerContainers.Length > 0);
+			Contract.Requires<ArgumentNullException>(innerContainers.All(c => c != null));
 
 			Name = typeof(T).Name;
 			Namespace = typeof(T).Namespace;
