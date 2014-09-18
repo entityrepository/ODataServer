@@ -23,6 +23,8 @@ namespace Scrum.WebApi
 		{
 			// ASP.NET MVC setup
 			AreaRegistration.RegisterAllAreas();
+			FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
+			//MvcRouteConfig.RegisterRoutes(RouteTable.Routes);
 
 			// DI config
 			var container = new Container(new ContainerOptions() { AllowOverridingRegistrations = true });
@@ -31,8 +33,6 @@ namespace Scrum.WebApi
 			// Web API config
 			GlobalConfiguration.Configuration.DependencyResolver = new SimpleInjectorWebApiDependencyResolver(container);
 			GlobalConfiguration.Configure(WebApiConfig.Register);
-			FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
-			//MvcRouteConfig.RegisterRoutes(RouteTable.Routes);
 		}
 
 	}

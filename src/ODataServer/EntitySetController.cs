@@ -6,13 +6,14 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Web.Http.OData.Extensions;
+using System.Web.OData.Extensions;
+using System.Web.OData.Query;
 using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Results;
 using EntityRepository.ODataServer.Routing;
 using EntityRepository.ODataServer.Util;
-using Microsoft.Data.Edm;
+using Microsoft.OData.Edm;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -21,10 +22,10 @@ using System.Net;
 using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.ModelBinding;
-using System.Web.Http.OData;
-using System.Web.Http.OData.Query;
-using System.Web.Http.OData.Results;
-using System.Web.Http.OData.Routing;
+using System.Web.OData;
+using System.Web.OData.Query;
+using System.Web.OData.Results;
+using System.Web.OData.Routing;
 
 namespace EntityRepository.ODataServer
 {
@@ -38,7 +39,6 @@ namespace EntityRepository.ODataServer
 	/// Like <see cref="System.Web.Http.OData.EntitySetController{TEntity,TKey}"/>, this base class is independent of entity framework 
 	/// concerns, so could be used for other query sources or persistence options.
 	/// </remarks>
-	[ODataNullValue]
 	public abstract class EntitySetController<TEntity, TKey> : ODataController where TEntity : class
 	{
 

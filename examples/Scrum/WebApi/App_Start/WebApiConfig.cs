@@ -6,16 +6,18 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Web.Http.OData.Batch;
-using System.Web.Http.OData.Routing;
+using System.Web.OData.Batch;
+using System.Web.OData.Routing;
 using EntityRepository.ODataServer;
 using EntityRepository.ODataServer.EF;
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Util;
 using Scrum.Dal;
+using Scrum.Model;
 using Scrum.Model.Base;
 using System;
 using System.Web.Http;
+using Scrum.WebApi.Controllers;
 using Scrum.WebApi.Models;
 
 namespace Scrum.WebApi
@@ -49,14 +51,15 @@ namespace Scrum.WebApi
 			// Configure OData controllers
 			// NOTE: The use of MultiContainerMetadata is unnecessary - could just be scrumDbContainer without the wrapper.
 			// The only reason to use MultiContainerMetadata here is to test it.
-			var oDataServerConfigurer = new ODataServerConfigurer(config, new MultiContainerMetadata<ODataContainer>(scrumDbContainer));
+			//var oDataServerConfigurer = new ODataServerConfigurer(config, new MultiContainerMetadata<ODataContainer>(scrumDbContainer));
+			var oDataServerConfigurer = new ODataServerConfigurer(config, scrumDbContainer);
 
 			// Just to prove that regular controller classes can be added when customization is needed
 			//oDataServerConfigurer.AddEntitySetController("Projects", typeof(Project), typeof(ProjectsController));
-			//oDataServerConfigurer.AddEntitySetController("Users", typeof(User), typeof(UsersController));
+			oDataServerConfigurer.AddEntitySetController("Users", typeof(User), typeof(UsersController));
 
 			oDataServerConfigurer.AddStandardEntitySetControllers(DbSetControllerSelector);
-			oDataServerConfigurer.ConfigureODataRoutes(config.Routes, "ODataRoute", ODataRoute, GlobalConfiguration.DefaultServer);
+			oDataServerConfigurer.ConfigureODataRoutes(config, "ODataRoute", ODataRoute, GlobalConfiguration.DefaultServer);
 		}
 
 		/// <summary>

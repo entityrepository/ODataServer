@@ -25,7 +25,7 @@ namespace Scrum.Model.Base
 		private static readonly object s_staticLock = new object();
 
 		/// <summary>
-		/// Holds a map of NamedDbEnum types (subclasses) to an ID lookup map for all values in the NamedDbEnum type;
+		/// Holds a map of NamedDbEnum types (subclasses) to an Id lookup map for all values in the NamedDbEnum type;
 		/// </summary>
 		private static readonly IDictionary<Type, IDictionary<object, object>> s_mapIdLookupPerType = new Dictionary<Type, IDictionary<object, object>>();
 
@@ -69,7 +69,7 @@ namespace Scrum.Model.Base
 				{
 					if (previousWithSameId != null)
 					{
-						// Remove the conflicting item; keep only one with the same ID
+						// Remove the conflicting item; keep only one with the same Id
 						allValuesList.Remove(previousWithSameId);
 					}
 					allValuesList.Add(dbEnumValue);
@@ -121,8 +121,8 @@ namespace Scrum.Model.Base
 		/// </summary>
 		/// <typeparam name="TId">The <c>TId</c> type parameter for <c>TDbEnum</c>.</typeparam>
 		/// <typeparam name="T">A class that subclasses <see cref="NamedDbEnum{TId}"/>.</typeparam>
-		/// <param name="id">The ID to lookup.</param>
-		/// <returns>A value of type <c>TDbEnum</c> with ID <c>== id</c>; or <c>null</c> if no such value is found.</returns>
+		/// <param name="id">The Id to lookup.</param>
+		/// <returns>A value of type <c>TDbEnum</c> with Id <c>== id</c>; or <c>null</c> if no such value is found.</returns>
 		public static T LookupById<TId, T>(TId id) where T : NamedDbEnum<TId, T>
 		{
 			IDictionary<object, object> idLookupMap;

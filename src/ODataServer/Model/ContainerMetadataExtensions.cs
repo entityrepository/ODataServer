@@ -9,7 +9,7 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using Microsoft.Data.Edm;
+using Microsoft.OData.Edm;
 
 namespace EntityRepository.ODataServer.Model
 {

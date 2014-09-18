@@ -8,14 +8,14 @@
 
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Util;
-using Microsoft.Data.Edm;
+using Microsoft.OData.Edm;
 using System;
 using System.Data.Entity;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net.Http;
-using System.Web.Http.OData.Query;
-using System.Web.Http.OData.Routing;
+using System.Web.OData.Query;
+using System.Web.OData.Routing;
 
 namespace EntityRepository.ODataServer.EF
 {

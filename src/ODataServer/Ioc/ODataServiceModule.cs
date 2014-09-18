@@ -7,8 +7,8 @@
 // -----------------------------------------------------------------------
 
 
-using System.Web.Http.OData;
-using System.Web.Http.OData.Query;
+using System.Web.OData;
+using System.Web.OData.Query;
 using EntityRepository.ODataServer.EF;
 using SimpleInjector;
 using SimpleInjector.Extensions;
@@ -31,7 +31,7 @@ namespace EntityRepository.ODataServer.Ioc
 			container.RegisterOpenGeneric(typeof(ReadOnlyDbSetController<,,>), typeof(ReadOnlyDbSetController<,,>));
 			container.RegisterOpenGeneric(typeof(EditDbSetController<,,>), typeof(EditDbSetController<,,>));
 
-			container.Register<ODataMetadataController>();
+			container.Register<MetadataController>();
 
 			// Default query validation settings (can be overridden)
 			container.RegisterSingle(new ODataValidationSettings

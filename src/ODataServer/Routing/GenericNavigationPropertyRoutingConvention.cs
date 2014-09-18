@@ -11,9 +11,9 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Web.Http.Controllers;
-using System.Web.Http.OData.Routing;
-using System.Web.Http.OData.Routing.Conventions;
-using Microsoft.Data.Edm;
+using System.Web.OData.Routing;
+using System.Web.OData.Routing.Conventions;
+using Microsoft.OData.Edm;
 
 namespace EntityRepository.ODataServer.Routing
 {

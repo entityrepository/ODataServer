@@ -8,7 +8,7 @@
 
 
 using System.Diagnostics.Contracts;
-using Microsoft.Data.Edm;
+using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
 
@@ -24,7 +24,7 @@ namespace EntityRepository.ODataServer.Model
 		string Namespace { get; set; }
 
 		IEdmModel EdmModel { get; }
-		IEdmEntityContainer EdmContainer { get; }
+		IEdmEntityContainer EntityContainer { get; }
 
 		IEnumerable<IEntityTypeMetadata> EntityTypes { get; }
 		IEnumerable<IEntitySetMetadata> EntitySets { get; }
@@ -80,7 +80,7 @@ namespace EntityRepository.ODataServer.Model
 			}
 		}
 
-		public IEdmEntityContainer EdmContainer
+		public IEdmEntityContainer EntityContainer
 		{
 			get
 			{

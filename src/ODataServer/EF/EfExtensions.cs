@@ -12,12 +12,14 @@ using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Xml;
-using Microsoft.Data.Edm;
+using System.Xml.Xsl;
+using Microsoft.OData.Edm;
 
 namespace EntityRepository.ODataServer.EF
 {
@@ -29,6 +31,8 @@ namespace EntityRepository.ODataServer.EF
 
 		private const string c_clrTypeMetadataKey = "http://schemas.microsoft.com/ado/2013/11/edm/customannotation:ClrType";
 
+		private const string c_edmxV4Namespace = "http://docs.oasis-open.org/odata/ns/edmx";
+
 		public static IEdmModel GetEdmModel(this DbContext dbContext)
 		{
 			// From https://gist.github.com/raghuramn/5864013
@@ -38,11 +42,44 @@ namespace EntityRepository.ODataServer.EF
 				{
 					EdmxWriter.WriteEdmx(dbContext, writer);
 				}
+
+				// TODO: Remove this, debug only
+				stream.Seek(0, SeekOrigin.Begin);
+				var sr = new StreamReader(stream);
+				Debug.WriteLine(sr.ReadToEnd());					
+
 				stream.Seek(0, SeekOrigin.Begin);
 				using (XmlReader reader = XmlReader.Create(stream))
 				{
-					return Microsoft.Data.Edm.Csdl.EdmxReader.Parse(reader);
+					while (reader.Read() && reader.NodeType != XmlNodeType.Element)
+					{}
+
+					if (reader.NamespaceURI == c_edmxV4Namespace)
+					{
+						return Microsoft.OData.Edm.Csdl.EdmxReader.Parse(reader);	
+					}
+					else
+					{
+						return ConvertOldEdmxToV4(reader);
+					}
 				}
+			}
+		}
+
+		private static IEdmModel ConvertOldEdmxToV4(XmlReader xmlReader)
+		{
+			var type = typeof(EfExtensions);
+			var assembly = type.Assembly;
+			var xslStream = assembly.GetManifestResourceStream(type, "V3-to-V4-CSDL.xsl");
+
+			using (var xslReader = XmlReader.Create(xslStream))
+			using (MemoryStream outStream = new MemoryStream())
+			{
+				var xslTransform = new XslCompiledTransform();
+				xslTransform.Load(xslReader);
+
+				var xmlWriter = XmlWriter.Create(outStream);
+				xslTransform.Transform(xmlReader, xmlWriter);
 			}
 		}
 

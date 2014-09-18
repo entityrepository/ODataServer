@@ -7,16 +7,15 @@
 // -----------------------------------------------------------------------
 
 
-using System.Web.Http.OData.Extensions;
 using EntityRepository.ODataServer.Model;
-using Microsoft.Data.OData;
-using Microsoft.Data.OData.Query;
 using System;
 using System.Diagnostics.Contracts;
 using System.Net;
 using System.Net.Http;
-using System.Web.Http;
-using System.Web.Http.OData.Routing;
+using System.Web.OData.Extensions;
+using System.Web.OData.Routing;
+using Microsoft.OData.Core;
+using Microsoft.OData.Core.UriParser;
 
 namespace EntityRepository.ODataServer.Results
 {
@@ -84,7 +83,7 @@ namespace EntityRepository.ODataServer.Results
 			}
 
 			object keyValue = entityTypeMetadata.SingleClrKeyProperty.GetValue(Entity);
-			string keyString = ODataUriUtils.ConvertToUriLiteral(keyValue, ODataVersion.V3, Request.ODataProperties().Model);
+			string keyString = ODataUriUtils.ConvertToUriLiteral(keyValue, ODataVersion.V4, Request.ODataProperties().Model);
 
 			string oDataLink = _controller.Url.CreateODataLink(new EntitySetPathSegment(entitySetMetadata.Name), new KeyValuePathSegment(keyString));
 			return new Uri(oDataLink);

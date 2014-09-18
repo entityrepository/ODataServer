@@ -10,8 +10,8 @@
 using System;
 using System.Web.Http;
 using System.Web.Http.Description;
-using System.Web.Http.OData;
-using System.Web.Http.OData.Results;
+using System.Web.OData;
+using System.Web.OData.Results;
 using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Results;

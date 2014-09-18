@@ -18,7 +18,7 @@ namespace Scrum.Model.Base
 	/// <summary>
 	/// Shared entity functionality.
 	/// </summary>
-	/// <typeparam name="TId">The ID type - must be a valid ID type in entity framework and data services - signed numeric type, string, etc.</typeparam>
+	/// <typeparam name="TId">The Id type - must be a valid Id type in entity framework and data services - signed numeric type, string, etc.</typeparam>
 	/// <typeparam name="TEntity">The entity type, which is derived from <c>BaseEntity</c></typeparam>
 	public abstract class BaseEntity<TId, TEntity> : IEquatable<TEntity>
 		where TEntity : BaseEntity<TId, TEntity>
@@ -30,10 +30,10 @@ namespace Scrum.Model.Base
 		private TId _id;
 
 		/// <summary>
-		/// The database entity ID - uniquely identifies an entity.  May be <c>default(TId)</c> before the
+		/// The database entity Id - uniquely identifies an entity.  May be <c>default(TId)</c> before the
 		/// entity is added to the database.
 		/// </summary>
-		public TId ID
+		public TId Id
 		{
 			get { return _id; }
 			set
@@ -47,7 +47,7 @@ namespace Scrum.Model.Base
 				{
 					if (HasId)
 					{
-						throw new InvalidOperationException("Entity ID cannot be set more than once.");
+						throw new InvalidOperationException("Entity Id cannot be set more than once.");
 					}
 
 					_id = value;
@@ -56,12 +56,12 @@ namespace Scrum.Model.Base
 		}
 
 		/// <summary>
-		/// Returns <c>true</c> if <see cref="ID"/> has been set; <see cref="ID"/> is normally only 
+		/// Returns <c>true</c> if <see cref="Id"/> has been set; <see cref="Id"/> is normally only 
 		/// set by a database.
 		/// </summary>
 		public bool HasId
 		{
-			get { return !Equals(ID, default(TId)); }
+			get { return !Equals(Id, default(TId)); }
 		}
 
 		/// <summary>
@@ -86,8 +86,8 @@ namespace Scrum.Model.Base
 				return false;
 			}
 
-			// Two entities are the same if they're the same type and have the same ID
-			return Equals(ID, other.ID) && ReferenceEquals(GetType(), other.GetType());
+			// Two entities are the same if they're the same type and have the same Id
+			return Equals(Id, other.Id) && ReferenceEquals(GetType(), other.GetType());
 		}
 
 		/// <summary>

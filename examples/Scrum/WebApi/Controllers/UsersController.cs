@@ -8,13 +8,13 @@
 
 using System.Linq;
 using System.Web.Http;
-using System.Web.Http.OData;
+using System.Web.OData;
 using Scrum.Dal;
 using Scrum.Model;
 
 namespace Scrum.WebApi.Controllers
 {
-	public class UsersController : EntitySetController<User, int>
+	public class UsersController : ODataController
 	{
 
 		private ScrumDb _db;
@@ -44,14 +44,15 @@ namespace Scrum.WebApi.Controllers
 		}
 
 		[EnableQuery]
-		public override IQueryable<User> Get()
+		public IQueryable<User> Get()
 		{
 			return Db.Users;
 		}
 
-		protected override User GetEntityByKey(int key)
+		[EnableQuery]
+		protected SingleResult<User> GetById([FromODataUri] int id)
 		{
-			return Db.Users.Find(key);
+			return SingleResult.Create(Db.Users.Where(user => user.Id == id));
 		}
 
 	}

@@ -8,7 +8,7 @@
 
 
 using EntityRepository.ODataServer.Model;
-using Microsoft.Data.Edm;
+using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -42,7 +42,7 @@ namespace EntityRepository.ODataServer.EF
 		public string Namespace { get; set; }
 
 		public IEdmModel EdmModel { get { return _edmModel; } }
-		public IEdmEntityContainer EdmContainer { get; private set; }
+		public IEdmEntityContainer EntityContainer { get; private set; }
 
 		public IEnumerable<IEntityTypeMetadata> EntityTypes { get { return _entityTypes; } }
 		public IEnumerable<IEntitySetMetadata> EntitySets { get { return _entitySets; } }
@@ -73,15 +73,15 @@ namespace EntityRepository.ODataServer.EF
 //			var entityContainer = cSpaceItems.OfType<EntityContainer>().Single();
 //			ItemCollection sSpaceItems = objectContext.MetadataWorkspace.GetItemCollection(DataSpace.SSpace);
 
-			EdmContainer = edmModel.FindDeclaredEntityContainer(objectContext.DefaultContainerName);
+			EntityContainer = edmModel.EntityContainer;
 
 			if (Name == null)
 			{
-				Name = EdmContainer.Name;
+				Name = EntityContainer.Name;
 			}
 			if (Namespace == null)
 			{
-				Namespace = EdmContainer.Namespace;
+				Namespace = EntityContainer.Namespace;
 			}
 
 			List<IEntityTypeMetadata> entityTypesList = new List<IEntityTypeMetadata>();
@@ -97,23 +97,23 @@ namespace EntityRepository.ODataServer.EF
 			entityTypesMetadata = entityTypesList.ToArray();
 
 			List<EntitySetMetadata> entitySetsList = new List<EntitySetMetadata>();
-			foreach (IEdmEntitySet edmEntitySet in EdmContainer.EntitySets())
+			foreach (IEdmEntitySet edmEntitySet in EntityContainer.EntitySets())
 			{
-				var elementTypeMetadata = entityTypesMetadata.Single(m => m.EdmType == edmEntitySet.ElementType);
+				var elementTypeMetadata = entityTypesMetadata.Single(m => m.EdmType == edmEntitySet.Type);
 				var elementTypeHierarchy = FindTypeHierarchyFrom(elementTypeMetadata, entityTypesMetadata);
 				entitySetsList.Add(new EntitySetMetadata(dbContext.GetType(), this, edmEntitySet, elementTypeMetadata, elementTypeHierarchy));
 			}
 			entitySetsMetadata = entitySetsList.ToArray();
 
 			// Iterate over the EntitySets a second time to populate the navigation properties
-			foreach (IEdmEntitySet edmEntitySet in EdmContainer.EntitySets())
+			foreach (IEdmEntitySet edmEntitySet in EntityContainer.EntitySets())
 			{
 				EntitySetMetadata sourceEntitySet = entitySetsList.First(esm => ReferenceEquals(esm.EdmEntitySet, edmEntitySet));
 				List<INavigationMetadata> navigationMetadata = new List<INavigationMetadata>();
-				foreach (var edmNavigationTargetMapping in edmEntitySet.NavigationTargets)
+				foreach (var edmNavigationPropertyBinding in edmEntitySet.NavigationPropertyBindings)
 				{
-					var targetEntitySet = entitySetsMetadata.First(esm => ReferenceEquals(esm.EdmEntitySet, edmNavigationTargetMapping.TargetEntitySet));
-					navigationMetadata.Add(new NavigationMetadata(edmNavigationTargetMapping.NavigationProperty, targetEntitySet));
+					var targetEntitySet = entitySetsMetadata.First(esm => ReferenceEquals(esm.EdmEntitySet, edmNavigationPropertyBinding.Target));
+					navigationMetadata.Add(new NavigationMetadata(edmNavigationPropertyBinding.NavigationProperty, targetEntitySet));
 				}
 				sourceEntitySet.NavigationProperties = navigationMetadata;
 			}

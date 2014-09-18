@@ -6,6 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using EntityRepository.ODataServer.Model;
+using Microsoft.OData.Core;
+using Microsoft.OData.Core.UriParser;
+using Microsoft.OData.Edm;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,15 +21,10 @@ using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Web.Http;
-using System.Web.Http.OData;
-using System.Web.Http.OData.Extensions;
-using System.Web.Http.OData.Query;
-using System.Web.Http.OData.Routing;
 using System.Web.Http.Routing;
-using EntityRepository.ODataServer.Model;
-using Microsoft.Data.Edm;
-using Microsoft.Data.OData;
-using Microsoft.Data.OData.Query;
+using System.Web.OData.Extensions;
+using System.Web.OData.Query;
+using System.Web.OData.Routing;
 
 namespace EntityRepository.ODataServer
 {
@@ -65,7 +64,6 @@ namespace EntityRepository.ODataServer
 			                                                                  new ODataError
 			                                                                  {
 				                                                                  Message = string.Format("{0} does not support {1} requests.", controller.GetType().FullName, requestType),
-				                                                                  MessageLanguage = UsEnglish,
 				                                                                  ErrorCode = requestType + " requests not supported"
 			                                                                  }));
 		}
@@ -92,7 +90,6 @@ namespace EntityRepository.ODataServer
 					                              new ODataError
 					                              {
 						                              Message = string.Format("More than 1 entity returned for {0}.", request.RequestUri),
-						                              MessageLanguage = UsEnglish,
 						                              ErrorCode = "Multiple entities returned for single entity method"
 					                              });
 				}
@@ -128,7 +125,6 @@ namespace EntityRepository.ODataServer
 											  new ODataError
 											  {
 												  Message = string.Format("More than 1 entity returned for {0}.", request.RequestUri),
-												  MessageLanguage = UsEnglish,
 												  ErrorCode = "Multiple entities returned for single entity method"
 											  });
 			}
@@ -234,7 +230,6 @@ namespace EntityRepository.ODataServer
 				                                  new ODataError
 				                                  {
 					                                  Message = string.Format("{0} does not support {1} requests.", controller.GetType().FullName, odataPath.PathTemplate),
-					                                  MessageLanguage = UsEnglish,
 					                                  ErrorCode = "Request not supported"
 				                                  }));
 		}
@@ -257,7 +252,7 @@ namespace EntityRepository.ODataServer
 			       && (rawValues.Expand == null)
 			       && (rawValues.OrderBy == null)
 			       && (rawValues.Format == null)
-			       && (rawValues.InlineCount == null)
+			       && (rawValues.Count == null)
 			       && (rawValues.Select == null)
 			       && (rawValues.Skip == null)
 				   && (rawValues.SkipToken == null)
@@ -291,12 +286,13 @@ namespace EntityRepository.ODataServer
 				ODataPath path = tmpRequest.ODataProperties().Path;
 				if (path.PathTemplate == "~/entityset/key")
 				{
-					entitySet = path.EntitySet;
+					throw new NotImplementedException("jc: Need to implement '~/entityset/key'");
+					//entitySet = path.EntitySet;
 					var keySegment = path.Segments.OfType<KeyValuePathSegment>().FirstOrDefault();
 					if (keySegment != null)
 					{
 						// Convert the segment into the key type.
-						key = ODataUriUtils.ConvertFromUriLiteral(keySegment.Value, ODataVersion.V3, request.ODataProperties().Model, entitySet.GetSingleKeyType());
+						key = ODataUriUtils.ConvertFromUriLiteral(keySegment.Value, ODataVersion.V4, request.ODataProperties().Model, entitySet.GetSingleKeyType());
 						return true;
 					}
 				}
@@ -311,7 +307,13 @@ namespace EntityRepository.ODataServer
 		{
 			Contract.Requires<ArgumentNullException>(entitySet != null);
 
-			IEnumerable<IEdmStructuralProperty> keys = entitySet.ElementType.Key();
+			var entityType = entitySet.Type as IEdmEntityType;
+			if (entityType == null)
+			{
+				throw new InvalidOperationException(string.Format("EntitySet {0} is not a set of an EntityType", entitySet.Name));
+			}
+
+			IEnumerable<IEdmStructuralProperty> keys = entityType.DeclaredKey;
 			if (keys.Count() != 1)
 			{
 				throw new InvalidOperationException(string.Format("EntitySet {0} has {1} key properties declared; a single key property is required.", entitySet.Name, keys.Count()));

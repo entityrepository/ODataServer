@@ -11,7 +11,7 @@ using System;
 using System.Diagnostics.Contracts;
 using System.Web.Http;
 using System.Web.Http.Controllers;
-using System.Web.Http.OData.Routing;
+using System.Web.OData.Routing;
 using EntityRepository.ODataServer.Model;
 
 namespace EntityRepository.ODataServer.Routing

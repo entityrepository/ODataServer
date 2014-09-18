@@ -6,13 +6,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Web.Http.OData.Extensions;
+using System.Web.OData.Extensions;
 using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Results;
 using EntityRepository.ODataServer.Routing;
 using EntityRepository.ODataServer.Util;
-using Microsoft.Data.Edm;
+using Microsoft.OData.Edm;
 using System;
 using System.Data.Entity;
 using System.Diagnostics;
@@ -20,9 +20,9 @@ using System.Diagnostics.Contracts;
 using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.ModelBinding;
-using System.Web.Http.OData;
-using System.Web.Http.OData.Query;
-using System.Web.Http.OData.Routing;
+using System.Web.OData;
+using System.Web.OData.Query;
+using System.Web.OData.Routing;
 
 namespace EntityRepository.ODataServer.EF
 {

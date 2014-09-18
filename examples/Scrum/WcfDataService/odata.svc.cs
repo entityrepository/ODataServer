@@ -37,7 +37,7 @@ namespace Scrum.Web
 		{
 			ScrumDb db = new ScrumDb();
 
-			// This is needed b/c ID values are passed back from the client, which may reference entities that aren't yet loaded.
+			// This is needed b/c Id values are passed back from the client, which may reference entities that aren't yet loaded.
 			db.Configuration.ValidateOnSaveEnabled = false;
 			return db;
 		}

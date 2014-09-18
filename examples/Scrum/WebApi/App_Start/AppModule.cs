@@ -11,7 +11,7 @@ using EntityRepository.ODataServer.Ioc;
 using EntityRepository.ODataServer.Model;
 using Scrum.Dal;
 using SimpleInjector;
-using System.Web.Http.OData.Query;
+using System.Web.OData.Query;
 using SimpleInjector.Integration.WebApi;
 
 namespace Scrum.WebApi
@@ -35,7 +35,7 @@ namespace Scrum.WebApi
 			container.RegisterLazy<ScrumDb>();
 
 			// Required: Register global datamodel metadata
-			container.RegisterSingle(typeof(IContainerMetadata<ScrumDb>), typeof(DbContextMetadata<ScrumDb>));
+			container.RegisterSingle<IContainerMetadata<ScrumDb>, DbContextMetadata<ScrumDb>>();
 
 			// Query validation settings could be specified here
 			container.RegisterSingle(new ODataValidationSettings

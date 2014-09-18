@@ -10,8 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using Microsoft.Data.Edm;
-using Microsoft.Data.Edm.Annotations;
+using Microsoft.OData.Edm;
+using Microsoft.OData.Edm.Annotations;
 
 namespace EntityRepository.ODataServer.Model
 {
@@ -42,7 +42,7 @@ namespace EntityRepository.ODataServer.Model
 		public string Name { get; set; }
 		public string Namespace { get; set; }
 		public IEdmModel EdmModel { get { return this; } }
-		public IEdmEntityContainer EdmContainer { get { return this; } }
+		public IEdmEntityContainer EntityContainer { get { return this; } }
 
 		public IEnumerable<IEntityTypeMetadata> EntityTypes
 		{
@@ -67,7 +67,7 @@ namespace EntityRepository.ODataServer.Model
 			{
 				if (string.Equals(name, innerContainer.Name, StringComparison.InvariantCultureIgnoreCase))
 				{
-					return innerContainer.EdmContainer;
+					return innerContainer.EntityContainer;
 				}
 			}
 			return null;
@@ -145,12 +145,12 @@ namespace EntityRepository.ODataServer.Model
 
 		public IEnumerable<IEdmFunctionImport> FindFunctionImports(string functionName)
 		{
-			return _innerContainers.SelectMany(c => c.EdmContainer.FindFunctionImports(functionName)).Distinct();
+			return _innerContainers.SelectMany(c => c.EntityContainer.FindFunctionImports(functionName)).Distinct();
 		}
 
 		public IEnumerable<IEdmEntityContainerElement> Elements
 		{
-			get { return _innerContainers.SelectMany(c => c.EdmContainer.Elements); }
+			get { return _innerContainers.SelectMany(c => c.EntityContainer.Elements); }
 		}
 
 		public EdmSchemaElementKind SchemaElementKind

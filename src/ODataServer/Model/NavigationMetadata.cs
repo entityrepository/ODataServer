@@ -8,7 +8,7 @@
 
 
 using System.Diagnostics.Contracts;
-using Microsoft.Data.Edm;
+using Microsoft.OData.Edm;
 
 namespace EntityRepository.ODataServer.Model
 {

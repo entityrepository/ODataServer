@@ -18,7 +18,7 @@ namespace Scrum.Model
 	public sealed class WorkItemVersion
 	{
 
-		private RequiredEntityRef<WorkItem, int> _workItem = new RequiredEntityRef<WorkItem, int>(workItem => workItem.ID);
+		private RequiredEntityRef<WorkItem, int> _workItem = new RequiredEntityRef<WorkItem, int>(workItem => workItem.Id);
 
 		public WorkItemVersion(WorkItem workItem, byte version)
 		{

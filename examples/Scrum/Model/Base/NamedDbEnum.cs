@@ -17,7 +17,7 @@ namespace Scrum.Model.Base
 	/// A base class for any enumeration-like class that is connected to the database,  
 	/// which has a friendly <c>string</c> name for each enumeration value.
 	/// </summary>
-	/// <typeparam name="TId">Type of the ID field in the derived class.</typeparam>
+	/// <typeparam name="TId">Type of the Id field in the derived class.</typeparam>
 	/// <typeparam name="T">The <see cref="NamedDbEnum{TId,T}"/>-derived class.  Needed so that equality can be properly implemented in the base class.</typeparam>
 	/// <example>
 	/// The standard use-case is a derived (preferably <c>sealed</c>) class with a number of <c>static readonly</c> values.  These values can
@@ -71,7 +71,7 @@ namespace Scrum.Model.Base
 		}
 
 		/// <summary>
-		/// ID property.  Note that the name <c>ID</c> is required (<c>Id</c> won't work) based on limitations in
+		/// Id property.  Note that the name <c>Id</c> is required (<c>Id</c> won't work) based on limitations in
 		/// the WCF data services client code.
 		/// </summary>
 		[DataMember(Name = "id", IsRequired = true, Order = 0)]
@@ -84,7 +84,7 @@ namespace Scrum.Model.Base
 				{
 					if (!Equals(_id, default(TId)))
 					{
-						throw new InvalidOperationException("NamedDbEnum ID cannot be set more than once.");
+						throw new InvalidOperationException("NamedDbEnum Id cannot be set more than once.");
 					}
 
 					_id = value;

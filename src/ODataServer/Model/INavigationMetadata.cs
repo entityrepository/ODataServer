@@ -7,7 +7,7 @@
 // -----------------------------------------------------------------------
 
 
-using Microsoft.Data.Edm;
+using Microsoft.OData.Edm;
 
 namespace EntityRepository.ODataServer.Model
 {

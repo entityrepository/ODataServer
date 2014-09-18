@@ -16,7 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Dependencies;
 using System.Web.Http.Hosting;
-using System.Web.Http.OData.Batch;
+using System.Web.OData.Batch;
 using EntityRepository.ODataServer.Results;
 using EntityRepository.ODataServer.Util;
 

@@ -12,7 +12,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
-using System.Web.Http.OData.Batch;
+using System.Web.OData.Batch;
 
 namespace EntityRepository.ODataServer.Batch
 {

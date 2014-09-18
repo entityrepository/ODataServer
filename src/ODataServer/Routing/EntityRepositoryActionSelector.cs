@@ -16,13 +16,13 @@ using System.Net.Http;
 using System.Reflection;
 using System.Web.Http;
 using System.Web.Http.Controllers;
-using System.Web.Http.OData.Extensions;
-using System.Web.Http.OData.Routing;
-using System.Web.Http.OData.Routing.Conventions;
+using System.Web.OData.Extensions;
+using System.Web.OData.Routing;
+using System.Web.OData.Routing.Conventions;
 using System.Web.Http.Routing;
 using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.Model;
-using Microsoft.Data.Edm;
+using Microsoft.OData.Edm;
 
 namespace EntityRepository.ODataServer.Routing
 {

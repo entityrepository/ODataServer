@@ -17,8 +17,8 @@ namespace Scrum.Model
 	public class WorkItemTimeLog : BaseEntity<long, WorkItemTimeLog>
 	{
 
-		private RequiredEntityRef<WorkItem, int> _workItem = new RequiredEntityRef<WorkItem, int>(workItem => workItem.ID);
-		private RequiredEntityRef<User, int> _worker = new RequiredEntityRef<User, int>(user => user.ID);
+		private RequiredEntityRef<WorkItem, int> _workItem = new RequiredEntityRef<WorkItem, int>(workItem => workItem.Id);
+		private RequiredEntityRef<User, int> _worker = new RequiredEntityRef<User, int>(user => user.Id);
 
 		public WorkItem WorkItem
 		{

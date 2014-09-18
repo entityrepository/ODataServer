@@ -13,7 +13,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using EntityRepository.ODataServer.Util;
-using Microsoft.Data.Edm;
+using Microsoft.OData.Edm;
 
 namespace EntityRepository.ODataServer.Model
 {

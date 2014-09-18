@@ -7,14 +7,14 @@
 // -----------------------------------------------------------------------
 
 using System.Threading;
-using System.Web.Http.OData.Batch;
-using System.Web.Http.OData.Extensions;
-using System.Web.Http.OData.Routing;
+using System.Web.OData.Batch;
+using System.Web.OData.Extensions;
+using System.Web.OData.Routing;
 using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.EF;
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Routing;
-using Microsoft.Data.Edm;
+using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -22,9 +22,9 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Web.Http;
 using System.Web.Http.Controllers;
-using System.Web.Http.OData;
-using System.Web.Http.OData.Builder;
-using System.Web.Http.OData.Routing.Conventions;
+using System.Web.OData;
+using System.Web.OData.Builder;
+using System.Web.OData.Routing.Conventions;
 
 namespace EntityRepository.ODataServer
 {
@@ -168,14 +168,14 @@ namespace EntityRepository.ODataServer
 		/// <param name="routeName"></param>
 		/// <param name="routePrefix"></param>
 		/// <param name="httpServer"></param>
-		public void ConfigureODataRoutes(HttpRouteCollection routes, string routeName, string routePrefix, HttpServer httpServer)
+		public void ConfigureODataRoutes(HttpConfiguration httpConfiguration, string routeName, string routePrefix, HttpServer httpServer)
 		{
-			routes.MapODataServiceRoute(routeName,
-			                            routePrefix,
-			                            BuildEdmModel(),
-			                            new DefaultODataPathHandler(),
-			                            GetRoutingConventions(),
-			                            new ODataServerBatchHandler(httpServer));
+			httpConfiguration.MapODataServiceRoute(routeName,
+			                                       routePrefix,
+			                                       BuildEdmModel(),
+			                                       new DefaultODataPathHandler(),
+			                                       GetRoutingConventions(),
+			                                       new ODataServerBatchHandler(httpServer));
 		}
 
 
@@ -211,7 +211,7 @@ namespace EntityRepository.ODataServer
 			// Add all entity types
 			foreach (IEntityTypeMetadata entityTypeMetadata in _containerMetadata.EntityTypes)
 			{
-				EntityTypeConfiguration entityTypeConfig = modelBuilder.AddEntity(entityTypeMetadata.ClrType);
+				EntityTypeConfiguration entityTypeConfig = modelBuilder.AddEntityType(entityTypeMetadata.ClrType);
 			}
 
 			// Add all entity sets
