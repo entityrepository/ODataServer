@@ -207,20 +207,23 @@ namespace EntityRepository.ODataServer.Routing
 					if (containerMetadata != null)
 					{
 						IEntitySetMetadata entitySetMetadata = containerMetadata.GetEntitySet(reflectedHttpActionDescriptor.ControllerDescriptor.ControllerName);
-						foreach (IEntityTypeMetadata entityTypeMetadata in entitySetMetadata.ElementTypeHierarchyMetadata)
+						if (entitySetMetadata != null)
 						{
-							// Foreach NavigationProperty in all of the entity types, add a new HttpActionDescriptor
-							foreach (var edmNavigationProperty in entityTypeMetadata.EdmType.DeclaredProperties.OfType<IEdmNavigationProperty>())
+							foreach (IEntityTypeMetadata entityTypeMetadata in entitySetMetadata.ElementTypeHierarchyMetadata)
 							{
-								IEdmEntityType toEntityType = edmNavigationProperty.ToEntityType();
-								IEntityTypeMetadata propertyTypeMetadata = containerMetadata.GetEntityType(toEntityType);
+								// Foreach NavigationProperty in all of the entity types, add a new HttpActionDescriptor
+								foreach (var edmNavigationProperty in entityTypeMetadata.EdmType.DeclaredProperties.OfType<IEdmNavigationProperty>())
+								{
+									IEdmEntityType toEntityType = edmNavigationProperty.ToEntityType();
+									IEntityTypeMetadata propertyTypeMetadata = containerMetadata.GetEntityType(toEntityType);
 
-								Type tProperty = propertyTypeMetadata.ClrType;
-								MethodInfo genericMethod = reflectedHttpActionDescriptor.MethodInfo.MakeGenericMethod(tProperty);
-								string expandedActionName = actionNameBuilder(edmNavigationProperty.Name);
-								expandedDescriptors.Add(new RenamedReflectedHttpActionDescriptor(reflectedHttpActionDescriptor.ControllerDescriptor,
-								                                                                 genericMethod,
-								                                                                 expandedActionName));
+									Type tProperty = propertyTypeMetadata.ClrType;
+									MethodInfo genericMethod = reflectedHttpActionDescriptor.MethodInfo.MakeGenericMethod(tProperty);
+									string expandedActionName = actionNameBuilder(edmNavigationProperty.Name);
+									expandedDescriptors.Add(new RenamedReflectedHttpActionDescriptor(reflectedHttpActionDescriptor.ControllerDescriptor,
+									                                                                 genericMethod,
+									                                                                 expandedActionName));
+								}
 							}
 						}
 					}
