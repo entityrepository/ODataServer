@@ -13,6 +13,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using EntityRepository.ODataServer.Util;
 
 namespace EntityRepository.ODataServer.Batch
 {
@@ -85,7 +86,7 @@ namespace EntityRepository.ODataServer.Batch
 			ChangeSetContext changeSetContext = oDataController.Request.GetChangeSetContext();
 			if (changeSetContext == null)
 			{	// Not in a ChangeSet, so execute completionTask immediately
-				await completionTask;
+				await completionTask.EnsureStarted();
 			}
 			else
 			{
