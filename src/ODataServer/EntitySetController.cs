@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Web.Http.OData.Extensions;
 using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Results;
@@ -22,8 +21,8 @@ using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.ModelBinding;
 using System.Web.Http.OData;
+using System.Web.Http.OData.Extensions;
 using System.Web.Http.OData.Query;
-using System.Web.Http.OData.Results;
 using System.Web.Http.OData.Routing;
 
 namespace EntityRepository.ODataServer
@@ -39,6 +38,7 @@ namespace EntityRepository.ODataServer
 	/// concerns, so could be used for other query sources or persistence options.
 	/// </remarks>
 	[ODataNullValue]
+	[UseEntityRepositoryActionSelector]
 	public abstract class EntitySetController<TEntity, TKey> : ODataController where TEntity : class
 	{
 

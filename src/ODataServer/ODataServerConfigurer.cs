@@ -14,6 +14,7 @@ using EntityRepository.ODataServer.Batch;
 using EntityRepository.ODataServer.EF;
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Routing;
+using EntityRepository.ODataServer.Util;
 using Microsoft.Data.Edm;
 using System;
 using System.Collections.Generic;
@@ -46,12 +47,29 @@ namespace EntityRepository.ODataServer
 
 		private readonly EntityRepositoryControllerSelector _controllerSelector;
 
-		public ODataServerConfigurer(HttpConfiguration webApiConfig, IContainerMetadata containerMetadata)
+		// TODO: Remove this - but keeping it in for now until we prove in all cases that the ctor below is better.
+		//public ODataServerConfigurer(HttpConfiguration webApiConfig, IContainerMetadata containerMetadata)
+		//{
+		//	Contract.Requires<ArgumentNullException>(webApiConfig != null);
+
+		//	_webApiConfig = webApiConfig;
+		//	_containerMetadata = containerMetadata;
+
+		//	_controllerSelector = EntityRepositoryControllerSelector.Install(webApiConfig, this);
+		//}
+
+		public ODataServerConfigurer(HttpConfiguration webApiConfig)
 		{
 			Contract.Requires<ArgumentNullException>(webApiConfig != null);
 
 			_webApiConfig = webApiConfig;
-			_containerMetadata = containerMetadata;
+
+			// Obtain the container metadata from the DI service
+			_containerMetadata = webApiConfig.DependencyResolver.Resolve<IContainerMetadata>();
+			if (_containerMetadata == null)
+			{
+				throw new ArgumentException("IContainerMetadata could not be resolved from HttpConfiguration.DependencyResolver.");
+			}
 
 			_controllerSelector = EntityRepositoryControllerSelector.Install(webApiConfig, this);
 		}
@@ -79,15 +97,8 @@ namespace EntityRepository.ODataServer
 				throw new ArgumentException(string.Format("EntitySet named '{0}' should have type {1}; {2} was passed in.", entitySetName, entitySetMetadata.ElementTypeMetadata.ClrType, entityType));
 			}
 
-			// HACK: But I don't see a better way.
-			// Store the _containerMetadata in a threadlocal, so it can be used by UseEntityRepositoryActionSelectorAttribute.Initialize().
-			RoutingExtensions.InitializingContainerMetadata.Value = _containerMetadata;
-
 			var controllerDescriptor = new HttpControllerDescriptor(_webApiConfig, entitySetName, controllerType);
-			controllerDescriptor.CacheContainerMetadata(_containerMetadata);
 			_controllerSelector.AddController(entitySetName, controllerDescriptor);
-
-			RoutingExtensions.InitializingContainerMetadata.Value = null;
 		}
 
 		/// <summary>

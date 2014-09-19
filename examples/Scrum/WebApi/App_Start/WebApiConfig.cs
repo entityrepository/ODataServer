@@ -39,19 +39,11 @@ namespace Scrum.WebApi
 
 		private static void ConfigureODataService(HttpConfiguration config)
 		{
-			// Pull the container metadata from the DI service
-			var scrumDbContainer = config.DependencyResolver.Resolve<IContainerMetadata<ScrumDb>>();
-			if (scrumDbContainer == null)
-			{
-				throw new ArgumentException("IContainerMetadata<ScrumDb> could not be resolved from HttpConfiguration.DependencyResolver.");
-			}
-
 			// Configure OData controllers
-			// NOTE: The use of MultiContainerMetadata is unnecessary - could just be scrumDbContainer without the wrapper.
-			// The only reason to use MultiContainerMetadata here is to test it.
-			var oDataServerConfigurer = new ODataServerConfigurer(config, new MultiContainerMetadata<ODataContainer>(scrumDbContainer));
+			var oDataServerConfigurer = new ODataServerConfigurer(config);
 
 			// Just to prove that regular controller classes can be added when customization is needed
+			// However, this isn't needed, b/c the dependency injector normally picks up all controllers in the assembly.
 			//oDataServerConfigurer.AddEntitySetController("Projects", typeof(Project), typeof(ProjectsController));
 			//oDataServerConfigurer.AddEntitySetController("Users", typeof(User), typeof(UsersController));
 

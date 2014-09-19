@@ -10,6 +10,7 @@ using EntityRepository.ODataServer.EF;
 using EntityRepository.ODataServer.Ioc;
 using EntityRepository.ODataServer.Model;
 using Scrum.Dal;
+using Scrum.WebApi.Models;
 using SimpleInjector;
 using System.Web.Http.OData.Query;
 using SimpleInjector.Integration.WebApi;
@@ -37,8 +38,12 @@ namespace Scrum.WebApi
 			// Required: Register global datamodel metadata
 			container.RegisterSingle(typeof(IContainerMetadata<ScrumDb>), typeof(DbContextMetadata<ScrumDb>));
 
+			// NOTE: The use of MultiContainerMetadata is unnecessary - could just skip the wrapper.
+			// The only reason to use MultiContainerMetadata here is to test it.
+			container.RegisterSingle(typeof(IContainerMetadata), () => new MultiContainerMetadata<ODataContainer>(container.GetInstance<IContainerMetadata<ScrumDb>>()));
+
 			// Query validation settings could be specified here
-			container.RegisterSingle(new ODataValidationSettings
+			container.RegisterSingle(new ODataValidationSettings()
 			                         {
 				                         MaxExpansionDepth = 5,
 				                         MaxTop = 200
