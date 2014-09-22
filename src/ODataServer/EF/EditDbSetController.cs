@@ -114,7 +114,7 @@ namespace EntityRepository.ODataServer.EF
 			return entity;
 		}
 
-		public override void Delete(TKey key)
+		protected override void DeleteEntityByKey(TKey key)
 		{
 			// TODO: Add support for executing a simple query, like DELETE FROM (Table) WHERE (KeyColumn)=key
 

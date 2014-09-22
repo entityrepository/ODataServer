@@ -190,8 +190,13 @@ namespace EntityRepository.ODataServer
 		/// <param name="key">The entity key of the entity to delete.</param>
 		public virtual void Delete([FromODataUri] TKey key)
 		{
-			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "DELETE");
+            DeleteEntityByKey(key);
 		}
+
+	    protected virtual void DeleteEntityByKey(TKey key)
+	    {
+	        throw EntitySetControllerHelpers.NotImplementedResponseException(this, "DELETE");
+	    }
 
 		/// <summary>
 		/// This method should be overridden to handle POST and PUT requests that attempt to create a link between two entities.
