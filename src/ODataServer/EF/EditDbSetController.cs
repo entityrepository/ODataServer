@@ -6,13 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Web.Http.OData.Extensions;
-using EntityRepository.ODataServer.Batch;
-using EntityRepository.ODataServer.Model;
-using EntityRepository.ODataServer.Results;
-using EntityRepository.ODataServer.Routing;
-using EntityRepository.ODataServer.Util;
-using Microsoft.Data.Edm;
 using System;
 using System.Data.Entity;
 using System.Diagnostics;
@@ -21,219 +14,277 @@ using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.ModelBinding;
 using System.Web.Http.OData;
+using System.Web.Http.OData.Extensions;
 using System.Web.Http.OData.Query;
 using System.Web.Http.OData.Routing;
+using EntityRepository.ODataServer.Batch;
+using EntityRepository.ODataServer.Model;
+using EntityRepository.ODataServer.Results;
+using EntityRepository.ODataServer.Routing;
+using EntityRepository.ODataServer.Util;
+using Microsoft.Data.Edm;
 
 namespace EntityRepository.ODataServer.EF
 {
-	/// <summary>An OData API controller that implements query and edit operations on an Entity Framework <see cref="DbSet"/>.</summary>
-	/// <typeparam name="TEntity">The entity type for the <c>DbSet</c>.</typeparam>
-	/// <typeparam name="TKey">The type of the entity key.</typeparam>
-	/// <typeparam name="TDbContext">The <see cref="DbContext"/> type containing the DbSet.</typeparam>
-	/// <remarks>
-	/// Query operation support is inherited from <see cref="ReadOnlyDbSetController{TEntity,TKey,TDbContext}"/>
-	/// </remarks>
-	public class EditDbSetController<TEntity, TKey, TDbContext>
-		: ReadOnlyDbSetController<TEntity, TKey, TDbContext>
-		where TEntity : class
-		//where TKey : IEquatable<TKey>
-		where TDbContext : DbContext
-	{
+    /// <summary>An OData API controller that implements query and edit operations on an Entity Framework <see cref="DbSet"/>.</summary>
+    /// <typeparam name="TEntity">The entity type for the <c>DbSet</c>.</typeparam>
+    /// <typeparam name="TKey">The type of the entity key.</typeparam>
+    /// <typeparam name="TDbContext">The <see cref="DbContext"/> type containing the DbSet.</typeparam>
+    /// <remarks>
+    /// Query operation support is inherited from <see cref="ReadOnlyDbSetController{TEntity,TKey,TDbContext}"/>
+    /// </remarks>
+    public class EditDbSetController<TEntity, TKey, TDbContext>
+        : ReadOnlyDbSetController<TEntity, TKey, TDbContext>
+        where TEntity : class
+        //where TKey : IEquatable<TKey>
+        where TDbContext : DbContext
+    {
 
-		public EditDbSetController(Lazy<TDbContext> lazyDbContext, IContainerMetadata<TDbContext> containerMetadata, ODataValidationSettings queryValidationSettings, ODataQuerySettings querySettings)
-			: base(lazyDbContext, containerMetadata, queryValidationSettings, querySettings)
-		{}
+        public EditDbSetController(Lazy<TDbContext> lazyDbContext,
+                                   IContainerMetadata<TDbContext> containerMetadata,
+                                   ODataValidationSettings queryValidationSettings,
+                                   ODataQuerySettings querySettings)
+            : base(lazyDbContext, containerMetadata, queryValidationSettings, querySettings)
+        {}
 
-		protected override void Dispose(bool disposing)
-		{
-			base.Dispose(disposing);
-		}
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+        }
 
-		/// <summary>
-		/// SaveChanges() is called after a changeset has been applied, using <see cref="ChangeSetExtensions.OnChangeSetSuccess(System.Web.Http.OData.ODataController,System.Action)"/>.
-		/// </summary>
-		private void SaveChanges()
-		{
-			if (! IsDbCreated)
-			{
-				return;
-			}
-
-
-			TDbContext dbContext = Db;
-			dbContext.ChangeTracker.DetectChanges();
-			if (dbContext.ChangeTracker.HasChanges())
-			{
-				dbContext.SaveChanges();
-			}
-			else
-			{
-				Trace.WriteLine("  No changes detected in " + dbContext.GetType().FullName);
-			}
-		}
-
-		#region Support for Create-Update-Delete operations on entities
-
-		protected internal override TEntity CreateEntity(TEntity entity)
-		{
-			DbSet.Add(entity);
-
-			this.OnChangeSetSuccess(SaveChanges);
-			return entity;
-		}
-
-		protected internal override TEntity UpdateEntity(TKey key, TEntity update)
-		{
-			TEntity original = DbSet.Find(key);
-			if (original == null)
-			{
-				string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
-				throw new ArgumentException(error, "key");
-			}
-
-			// Apply changes
-			ReflectionExtensions.CopyPublicPrimitivePropertyValues(update, original);
-
-			this.OnChangeSetSuccess(SaveChanges);
-			return original;
-		}
-
-		protected internal override TEntity PatchEntity(TKey key, Delta<TEntity> patch)
-		{
-			TEntity entity = DbSet.Find(key);
-			if (entity == null)
-			{
-				string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
-				throw new ArgumentException(error, "key");
-			}
-
-			// Apply changes
-			patch.CopyChangedValues(entity);
-
-			this.OnChangeSetSuccess(SaveChanges);
-			return entity;
-		}
-
-		protected override void DeleteEntityByKey(TKey key)
-		{
-			// TODO: Add support for executing a simple query, like DELETE FROM (Table) WHERE (KeyColumn)=key
-
-			TEntity entity = DbSet.Find(key);
-			if (entity == null)
-			{
-				// Doesn't exist, which makes the delete successful
-				return;
-			}
-
-			DbSet.Remove(entity);
-
-			this.OnChangeSetSuccess(SaveChanges);
-		}
-
-		#endregion
-		#region Navigation properties
-
-		public override CreatedItemResult<TProperty> PostNavigationProperty<TProperty>(TKey key, string navigationProperty, TProperty propertyEntity)
-		{
-			TEntity entity = DbSet.Find(key);
-			if (entity == null)
-			{
-				string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
-				throw new ArgumentException(error, "key");
-			}
-
-			return PostNavigationProperty(entity, navigationProperty, propertyEntity);
-		}
-
-		public override CreatedItemResult<TProperty> PostNavigationProperty<TProperty>([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity entity, string navigationProperty, TProperty propertyEntity)
-		{
-			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.ODataProperties().Path);
-			Contract.Assert(navigationProperty == edmNavigationProperty.Name);
-
-			// Add the new propertyEntity to the appropriate DbSet; Find its EntitySet first
-			//IEdmEntityType edmEntityType = edmNavigationProperty.ToEntityType();
-			//IEntitySetMetadata entitySetMetadata = ContainerMetadata.GetEntitySetFor(edmEntityType);
-			//if (entitySetMetadata == null)
-			//{
-			//	throw new InvalidOperationException("Unable to find the entityset for entity type " + edmEntityType.ToTraceString());
-			//}
-			//Db.AddEntity(entitySetMetadata.Name, propertyEntity);
-
-			if (edmNavigationProperty.Type.IsCollection())
-			{
-				object propertyCollection = entity.GetPropertyValue(navigationProperty);
-				propertyCollection.InvokeMethod("Add", propertyEntity);
-			}
-			else
-			{
-				entity.SetPropertyValue(navigationProperty, propertyEntity);
-			}
-
-			this.OnChangeSetSuccess(SaveChanges);
-
-			return Created(propertyEntity);
-		}
+        /// <summary>
+        /// SaveChanges() is called after a changeset has been applied, using <see cref="ChangeSetExtensions.OnChangeSetSuccess(System.Web.Http.OData.ODataController,System.Action)"/>.
+        /// </summary>
+        private void SaveChanges()
+        {
+            if (! IsDbCreated)
+            {
+                return;
+            }
 
 
-		#endregion
-		#region Support for Create-Update-Delete operations on links
+            TDbContext dbContext = Db;
+            dbContext.ChangeTracker.DetectChanges();
+            if (dbContext.ChangeTracker.HasChanges())
+            {
+                dbContext.SaveChanges();
+            }
+            else
+            {
+                Trace.WriteLine("  No changes detected in " + dbContext.GetType().FullName);
+            }
+        }
 
-		public override void CreateLink(TKey key, string navigationProperty, [FromBody] Uri link)
-		{
-			TEntity entity = DbSet.Find(key);
-			if (entity == null)
-			{
-				string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
-				throw new ArgumentException(error, "key");
-			}
+        #region Support for Create-Update-Delete operations on entities
 
-			CreateLink(entity, navigationProperty, link);
-		}
+        protected internal override TEntity CreateEntity(TEntity entity)
+        {
+            DbSet.Add(entity);
 
-		public override void CreateLink([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity entity, string navigationProperty, [FromBody] Uri link)
-		{
-			IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.ODataProperties().Path);
-			Contract.Assert(navigationProperty == edmNavigationProperty.Name);
+            this.OnChangeSetSuccess(SaveChanges);
+            return entity;
+        }
 
-			// Fetch the linked object either via a ChangeSet/Content-ID reference, or by fetching it from the database.
-			object linkedObject = null;
-			if (! Request.ContentIdReferenceToEntity(link.OriginalString, out linkedObject))
-			{
-				linkedObject = GetEntityForLink(link);
-			}
-			if (linkedObject == null)
-			{
-				throw new ArgumentException(string.Format("Link: {0} could not be resolved to an entity", link), "link");
-			}
+        protected internal override TEntity UpdateEntity(TKey key, TEntity update)
+        {
+            TEntity original = DbSet.Find(key);
+            if (original == null)
+            {
+                string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
+                throw new ArgumentException(error, "key");
+            }
 
-			if (edmNavigationProperty.Type.IsCollection())
-			{
-				object propertyCollection = entity.GetPropertyValue(navigationProperty);
-				propertyCollection.InvokeMethod("Add", linkedObject);
-			}
-			else
-			{
-				entity.SetPropertyValue(navigationProperty, linkedObject);
-			}
+            // Apply changes
+            ReflectionExtensions.CopyPublicPrimitivePropertyValues(update, original);
 
-			this.OnChangeSetSuccess(SaveChanges);
-		}
+            this.OnChangeSetSuccess(SaveChanges);
+            return original;
+        }
 
-		public override void DeleteLink(TKey key, string navigationProperty, Uri link)
-		{
-			base.DeleteLink(key, navigationProperty, link);
-		}
+        protected internal override TEntity PatchEntity(TKey key, Delta<TEntity> patch)
+        {
+            TEntity entity = DbSet.Find(key);
+            if (entity == null)
+            {
+                string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
+                throw new ArgumentException(error, "key");
+            }
 
-		public override void DeleteLink(TKey key, string relatedKey, string navigationProperty)
-		{
-			base.DeleteLink(key, relatedKey, navigationProperty);
-		}
+            // Apply changes
+            patch.CopyChangedValues(entity);
 
-		#endregion
+            this.OnChangeSetSuccess(SaveChanges);
+            return entity;
+        }
 
-		public override HttpResponseMessage HandleUnmappedRequest(ODataPath odataPath)
-		{
-			return base.HandleUnmappedRequest(odataPath);
-		}
-	}
+        protected override void DeleteEntityByKey(TKey key)
+        {
+            // TODO: Add support for executing a simple query, like DELETE FROM (Table) WHERE (KeyColumn)=key
+
+            TEntity entity = DbSet.Find(key);
+            if (entity == null)
+            {
+                // Doesn't exist, which makes the delete successful
+                return;
+            }
+
+            DbSet.Remove(entity);
+
+            this.OnChangeSetSuccess(SaveChanges);
+        }
+
+        #endregion
+
+        #region Navigation properties
+
+        public override CreatedItemResult<TProperty> PostNavigationProperty<TProperty>(TKey key, string navigationProperty, TProperty propertyEntity)
+        {
+            TEntity entity = DbSet.Find(key);
+            if (entity == null)
+            {
+                string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
+                throw new ArgumentException(error, "key");
+            }
+
+            return PostNavigationProperty(entity, navigationProperty, propertyEntity);
+        }
+
+        public override CreatedItemResult<TProperty> PostNavigationProperty<TProperty>([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity entity,
+                                                                                       string navigationProperty,
+                                                                                       TProperty propertyEntity)
+        {
+            IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.ODataProperties().Path);
+            Contract.Assert(navigationProperty == edmNavigationProperty.Name);
+
+            // Add the new propertyEntity to the appropriate DbSet; Find its EntitySet first
+            //IEdmEntityType edmEntityType = edmNavigationProperty.ToEntityType();
+            //IEntitySetMetadata entitySetMetadata = ContainerMetadata.GetEntitySetFor(edmEntityType);
+            //if (entitySetMetadata == null)
+            //{
+            //	throw new InvalidOperationException("Unable to find the entityset for entity type " + edmEntityType.ToTraceString());
+            //}
+            //Db.AddEntity(entitySetMetadata.Name, propertyEntity);
+
+            if (edmNavigationProperty.Type.IsCollection())
+            {
+                object propertyCollection = entity.GetPropertyValue(navigationProperty);
+                propertyCollection.InvokeMethod("Add", propertyEntity);
+            }
+            else
+            {
+                entity.SetPropertyValue(navigationProperty, propertyEntity);
+            }
+
+            this.OnChangeSetSuccess(SaveChanges);
+
+            return Created(propertyEntity);
+        }
+
+        #endregion
+
+        #region Support for Create-Update-Delete operations on links
+
+        public override void CreateLink(TKey key, string navigationProperty, [FromBody] Uri link)
+        {
+            TEntity entity = DbSet.Find(key);
+            if (entity == null)
+            {
+                string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
+                throw new ArgumentException(error, "key");
+            }
+
+            CreateLink(entity, navigationProperty, link);
+        }
+
+        public override void CreateLink([ModelBinder(typeof(ChangeSetEntityModelBinder))] TEntity entity, string navigationProperty, [FromBody] Uri link)
+        {
+            IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.ODataProperties().Path);
+            Contract.Assert(navigationProperty == edmNavigationProperty.Name);
+
+            // Fetch the linked object either via a ChangeSet/Content-ID reference, or by fetching it from the database.
+            object linkedObject = null;
+            if (! Request.ContentIdReferenceToEntity(link.OriginalString, out linkedObject))
+            {
+                linkedObject = GetEntityForLink(link);
+            }
+            if (linkedObject == null)
+            {
+                throw new ArgumentException(string.Format("Link: {0} could not be resolved to an entity", link), "link");
+            }
+
+            if (edmNavigationProperty.Type.IsCollection())
+            {
+                object propertyCollection = entity.GetPropertyValue(navigationProperty);
+                propertyCollection.InvokeMethod("Add", linkedObject);
+            }
+            else
+            {
+                entity.SetPropertyValue(navigationProperty, linkedObject);
+            }
+
+            this.OnChangeSetSuccess(SaveChanges);
+        }
+
+        private void DeleteLink(TKey key, string navigationProperty, object linkedObject)
+        {
+            IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.ODataProperties().Path);
+            Contract.Assert(navigationProperty == edmNavigationProperty.Name);
+
+            // Find the containing entity
+            TEntity entity = DbSet.Find(key);
+            if (entity == null) {
+                string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
+                throw new ArgumentException(error, "key");
+            }
+
+            if (edmNavigationProperty.Type.IsCollection()) {
+                object propertyCollection = entity.GetPropertyValue(navigationProperty);
+                propertyCollection.InvokeMethod("Remove", linkedObject);
+            } else {
+                entity.SetPropertyValue(navigationProperty, null);
+            }
+
+            this.OnChangeSetSuccess(SaveChanges);
+        }
+
+        public override void DeleteLink([FromODataUri] TKey key, string navigationProperty, Uri link)
+        {
+            object linkedObject = null;
+            if (!Request.ContentIdReferenceToEntity(link.OriginalString, out linkedObject))
+            {
+                linkedObject = GetEntityForLink(link);
+            }
+            if (linkedObject == null)
+            {
+                throw new ArgumentException(string.Format("Link: {0} could not be resolved to an entity", link), "link");
+            }
+
+            DeleteLink(key, navigationProperty, linkedObject);
+        }
+
+        public override void DeleteLink([FromODataUri] TKey key, string relatedKey, string navigationProperty)
+        {
+            IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.ODataProperties().Path);
+            Contract.Assert(navigationProperty == edmNavigationProperty.Name);
+
+            // Get the DbSet containing the linked object
+            IEdmSchemaType schemaType = ((Microsoft.Data.Edm.Library.EdmNavigationProperty) edmNavigationProperty.Partner).DeclaringEntityType;
+            Type relatedType = ContainerMetadata.GetEntitySetFor(schemaType).ElementTypeMetadata.ClrType;
+            object linkedObject = Db.Set(relatedType).Find(key);
+            if (linkedObject == null)
+            {
+                throw new ArgumentException(string.Format("Link: {0}.{1} could not be resolved to an entity", navigationProperty, relatedKey), "link");
+            }
+
+            DeleteLink(key, navigationProperty, linkedObject);
+        }
+
+        #endregion
+
+        public override HttpResponseMessage HandleUnmappedRequest(ODataPath odataPath)
+        {
+            return base.HandleUnmappedRequest(odataPath);
+        }
+
+    }
 }
