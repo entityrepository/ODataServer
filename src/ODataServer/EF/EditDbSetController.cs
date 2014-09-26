@@ -23,6 +23,8 @@ using EntityRepository.ODataServer.Results;
 using EntityRepository.ODataServer.Routing;
 using EntityRepository.ODataServer.Util;
 using Microsoft.Data.Edm;
+using Microsoft.Data.OData;
+using Microsoft.Data.OData.Query;
 
 namespace EntityRepository.ODataServer.EF
 {
@@ -270,7 +272,8 @@ namespace EntityRepository.ODataServer.EF
             // Get the DbSet containing the linked object
             IEdmSchemaType schemaType = ((Microsoft.Data.Edm.Library.EdmNavigationProperty) edmNavigationProperty.Partner).DeclaringEntityType;
             Type relatedType = ContainerMetadata.GetEntitySetFor(schemaType).ElementTypeMetadata.ClrType;
-            object linkedObject = Db.Set(relatedType).Find(key);
+            object linkKey = ODataUriUtils.ConvertFromUriLiteral(relatedKey, ODataVersion.V3, Request.ODataProperties().Model, Request.ODataProperties().Path.EntitySet.GetSingleKeyType());
+            object linkedObject = Db.Set(relatedType).Find(linkKey);
             if (linkedObject == null)
             {
                 throw new ArgumentException(string.Format("Link: {0}.{1} could not be resolved to an entity", navigationProperty, relatedKey), "link");
