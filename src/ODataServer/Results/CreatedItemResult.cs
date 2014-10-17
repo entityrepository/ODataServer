@@ -43,7 +43,7 @@ namespace EntityRepository.ODataServer.Results
 
 			_controller = controller;
 		}
-		 
+
 		/// <summary>
 		/// Gets the location header of the created entity.
 		/// </summary>
@@ -70,25 +70,36 @@ namespace EntityRepository.ODataServer.Results
 			response.Headers.Location = LocationHeader;
 		}
 
-		internal Uri GenerateLocationHeader()
-		{
-			Contract.Assert(_controller.ContainerMetadata != null);
+	    internal Uri GenerateLocationHeader()
+	    {
+	        Contract.Assert(_controller.ContainerMetadata != null);
 
-			Type clrType = Entity.GetType();
-			IEntitySetMetadata entitySetMetadata = _controller.ContainerMetadata.GetEntitySetFor(clrType);
-			IEntityTypeMetadata entityTypeMetadata = _controller.ContainerMetadata.GetEntityType(clrType);
-			if ((entitySetMetadata == null)
-			    || (entityTypeMetadata == null))
-			{
-				throw new InvalidOperationException("IEntitySetMetadata and/or IEntityTypeMetadata not found for entity type " + clrType.FullName);
-			}
+	        Type clrType = Entity.GetType();
+	        Type baseType = clrType.BaseType;
+	        IEntitySetMetadata entitySetMetadata = _controller.ContainerMetadata.GetEntitySetFor(clrType);
+	        while (entitySetMetadata == null && baseType != null)
+	        {
+	            entitySetMetadata = _controller.ContainerMetadata.GetEntitySetFor(baseType);
+	            baseType = baseType.BaseType;
+	        }
 
-			object keyValue = entityTypeMetadata.SingleClrKeyProperty.GetValue(Entity);
-			string keyString = ODataUriUtils.ConvertToUriLiteral(keyValue, ODataVersion.V3, Request.ODataProperties().Model);
+	        if (entitySetMetadata == null)
+	        {
+	            throw new InvalidOperationException("IEntitySetMetadata not found for entity type " + clrType.FullName);
+	        }
 
-			string oDataLink = _controller.Url.CreateODataLink(new EntitySetPathSegment(entitySetMetadata.Name), new KeyValuePathSegment(keyString));
-			return new Uri(oDataLink);
-		}
+	        IEntityTypeMetadata entityTypeMetadata = _controller.ContainerMetadata.GetEntityType(clrType);
+	        if (entityTypeMetadata == null)
+	        {
+	            throw new InvalidOperationException("IEntityTypeMetadata not found for entity type " + clrType.FullName);
+	        }
+
+	        object keyValue = entityTypeMetadata.SingleClrKeyProperty.GetValue(Entity);
+	        string keyString = ODataUriUtils.ConvertToUriLiteral(keyValue, ODataVersion.V3, Request.ODataProperties().Model);
+
+	        string oDataLink = _controller.Url.CreateODataLink(new EntitySetPathSegment(entitySetMetadata.Name), new KeyValuePathSegment(keyString));
+	        return new Uri(oDataLink);
+	    }
 
 	}
 }
