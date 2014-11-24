@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Configuration;
 using System.Threading;
 using System.Web.Http.OData.Batch;
 using System.Web.Http.OData.Extensions;
@@ -26,6 +27,7 @@ using System.Web.Http.Controllers;
 using System.Web.Http.OData;
 using System.Web.Http.OData.Builder;
 using System.Web.Http.OData.Routing.Conventions;
+using Microsoft.Data.OData;
 
 namespace EntityRepository.ODataServer
 {
@@ -179,14 +181,21 @@ namespace EntityRepository.ODataServer
 		/// <param name="routeName"></param>
 		/// <param name="routePrefix"></param>
 		/// <param name="httpServer"></param>
-		public void ConfigureODataRoutes(HttpRouteCollection routes, string routeName, string routePrefix, HttpServer httpServer)
+		public void ConfigureODataRoutes(HttpRouteCollection routes, string routeName, string routePrefix, HttpServer httpServer, int? maxOperationsPerChangeset = null)
 		{
-			routes.MapODataServiceRoute(routeName,
+		    var batchHandler = new ODataServerBatchHandler(httpServer);
+
+		    if (maxOperationsPerChangeset != null)
+		    {
+		        batchHandler.MessageQuotas.MaxOperationsPerChangeset = maxOperationsPerChangeset.GetValueOrDefault();
+		    }
+
+		    routes.MapODataServiceRoute(routeName,
 			                            routePrefix,
 			                            BuildEdmModel(),
 			                            new DefaultODataPathHandler(),
 			                            GetRoutingConventions(),
-			                            new ODataServerBatchHandler(httpServer));
+			                            batchHandler);
 		}
 
 
