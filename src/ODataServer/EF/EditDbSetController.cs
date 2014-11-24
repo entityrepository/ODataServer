@@ -139,7 +139,7 @@ namespace EntityRepository.ODataServer.EF
 
         #region Navigation properties
 
-        public override CreatedItemResult<TProperty> PostNavigationProperty<TProperty>(TKey key, string navigationProperty, TProperty propertyEntity)
+        public override CreatedItemResult<TProperty> PostNavigationProperty<TProperty>([FromODataUri] TKey key, string navigationProperty, TProperty propertyEntity)
         {
             TEntity entity = DbSet.Find(key);
             if (entity == null)
