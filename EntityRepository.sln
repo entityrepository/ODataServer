@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D5C71AB9-668E-42AE-A064-C580B04924CF}"
 EndProject
@@ -22,6 +22,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scrum.WcfDataService", "examples\Scrum\WcfDataService\Scrum.WcfDataService.csproj", "{7C1F9F0C-1736-4E45-8519-7CDE8FD8CF1B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scrum.WebApi", "examples\Scrum\WebApi\Scrum.WebApi.csproj", "{14210187-9E28-4088-A8B8-10263313B901}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scrum.WebApi.IntegrationTests", "examples\Scrum\WebApi.IntegrationTests\Scrum.WebApi.IntegrationTests.csproj", "{A4AA1820-849E-439F-9D9B-8FD98088E44B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,6 +55,10 @@ Global
 		{14210187-9E28-4088-A8B8-10263313B901}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{14210187-9E28-4088-A8B8-10263313B901}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{14210187-9E28-4088-A8B8-10263313B901}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4AA1820-849E-439F-9D9B-8FD98088E44B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4AA1820-849E-439F-9D9B-8FD98088E44B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4AA1820-849E-439F-9D9B-8FD98088E44B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4AA1820-849E-439F-9D9B-8FD98088E44B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -65,6 +71,7 @@ Global
 		{96021276-57EE-40DB-B304-FC064D09C9F3} = {3AD9E07C-CBE4-49C4-A9C4-FE02C2EB73EC}
 		{7C1F9F0C-1736-4E45-8519-7CDE8FD8CF1B} = {3AD9E07C-CBE4-49C4-A9C4-FE02C2EB73EC}
 		{14210187-9E28-4088-A8B8-10263313B901} = {3AD9E07C-CBE4-49C4-A9C4-FE02C2EB73EC}
+		{A4AA1820-849E-439F-9D9B-8FD98088E44B} = {3AD9E07C-CBE4-49C4-A9C4-FE02C2EB73EC}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = src\ODataServer\EntityRepository.ODataServer.csproj

@@ -52,7 +52,7 @@ namespace EntityRepository.ODataServer.Batch
 			Contract.Requires<ArgumentNullException>(oDataController != null);
 			Contract.Requires<ArgumentNullException>(completionFunction != null);
 
-			OnChangeSetSuccess(oDataController, new Task(completionFunction)).Wait();
+			OnChangeSetSuccess(oDataController, new Task(completionFunction)).RunSynchronously();
 		}
 
 		/// <summary>
@@ -78,19 +78,20 @@ namespace EntityRepository.ODataServer.Batch
 		//														{ Content = new StringContent("Changeset action method called; pending completion task.") });
 		//	}
 		//}
-		public static async Task OnChangeSetSuccess(this ODataController oDataController, Task completionTask)
+		public static Task OnChangeSetSuccess(this ODataController oDataController, Task completionTask)
 		{
 			Contract.Requires<ArgumentNullException>(oDataController != null);
 			Contract.Requires<ArgumentNullException>(completionTask != null);
 
 			ChangeSetContext changeSetContext = oDataController.Request.GetChangeSetContext();
 			if (changeSetContext == null)
-			{	// Not in a ChangeSet, so execute completionTask immediately
-				await completionTask.EnsureStarted();
+			{	// Not in a ChangeSet, so return completionTask so it is executed next
+				return completionTask;
 			}
 			else
 			{
 				changeSetContext.AddOnChangeSetSuccessTask(completionTask);
+				return Task.FromResult(true);
 			}
 		}
 

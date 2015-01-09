@@ -37,7 +37,7 @@ namespace Scrum.WebApi
 			ConfigureODataService(config);
 		}
 
-		private static void ConfigureODataService(HttpConfiguration config)
+		internal static void ConfigureODataService(HttpConfiguration config)
 		{
 			// Configure OData controllers
 			var oDataServerConfigurer = new ODataServerConfigurer(config);
