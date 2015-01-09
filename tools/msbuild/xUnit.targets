@@ -1,0 +1,48 @@
+<!--
+***********************************************************************************************
+xUnit.targets
+
+***********************************************************************************************
+-->
+
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<PropertyGroup>
+		<xUnitRunnerAssembly Condition=" $(xUnitRunnerAssembly) == '' ">..\..\packages\xunit.1.9.2\lib\net20\xunit.runner.msbuild.dll</xUnitRunnerAssembly>
+		<!-- Use msbuild ... /p:xUnitVerbose=true for Verbose test output-->
+		<!-- Use msbuild ... /p:ContinueOnxUnitFailures=true to continue the build even when tests fail. -->
+		<xUnitVerbose Condition=" $(XUnitVerbose) == '' ">False</xUnitVerbose>
+		<ContinueOnxUnitFailures Condition=" $(ContinueOnxUnitFailures) == '' ">False</ContinueOnxUnitFailures>
+	</PropertyGroup>
+
+	<UsingTask AssemblyFile="$(xUnitRunnerAssembly)"
+			TaskName="Xunit.Runner.MSBuild.xunit" />
+	
+	<!-- msbuild /t:Test [/p:xUnitVerbose][/p:ContinueOnxUnitFailures]
+	
+	Runs all tests in the current target assembly.
+	-->
+	<Target Name="Test">
+		<PropertyGroup>
+			<xUnit1xLib>$(TargetDir)\xunit.dll</xUnit1xLib>
+			<xUnit2xLib>$(TargetDir)\xunit.abstractions.dll</xUnit2xLib>
+		</PropertyGroup>
+		
+		<!-- Run build if $(TargetPath) doesn't exist; if it does exist, don't rebuild automatically.
+		In other words, tests are re-run on old builds. If you want a build, specify both targets, eg msbuild /t:build,test
+		-->
+		<CallTarget Targets="build" Condition=" !Exists('$(TargetPath)') " />
+		
+		<!-- After a build, xunit.dll must be in the TargetDir.  If not, tests can't be run. -->
+		<Error Condition=" !Exists('$(xUnit1xLib)') and !Exists('$(xUnit2xLib)') " Text="Unit tests cannot be run without a NuGet dependency on xUnit (1.x or 2.x)." />
+
+		<!-- It seems that *.xunit config files are not currently used by the MSBuild task
+		<ItemGroup>
+			<XUnitConfigFile Include="$(MSBuildProjectDirectory)*.xunit" />
+		</ItemGroup> -->
+
+		<xunit Assemblies="$(TargetPath)" Verbose="$(xUnitVerbose)" ContinueOnError="$(ContinueOnxUnitFailures)" />
+
+	</Target>
+
+</Project>

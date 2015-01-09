@@ -37,8 +37,10 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
+// Guideline: Informational/semver increments on every build.  Assembly version should only increment
+// on breaking changes, aka major version changes.
 [assembly: AssemblyVersion("0.8.1.0")]
 [assembly: AssemblyFileVersion("0.8.1.0")]
 
 // Semantic version (http://semver.org) . First 3 numbers must match first 3 numbers of AssemblyVersion and AssemblyFileVersion.
-[assembly: AssemblyInformationalVersion("0.8.1-beta")]
+[assembly: AssemblyInformationalVersion("0.8.2-beta")]
