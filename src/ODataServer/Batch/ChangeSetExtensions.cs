@@ -32,32 +32,29 @@ namespace EntityRepository.ODataServer.Batch
 		#region Public ODataController extension methods
 
 		/// <summary>
-		/// Set the synchronous function to call when the changeset is complete.
+		/// Sets a synchronous function to call when the changeset is complete.
 		/// </summary>
 		/// <param name="oDataController"></param>
 		/// <param name="completionFunction"></param>
 		/// <returns></returns>
 		/// <remarks>
-		/// This method can result in the completionFunction being called, so it can block for a while.
+		/// If there is no containing changeset, this method will result in the completionFunction being called synchronously, so it can block for a while.
 		/// </remarks>
-		//public static HttpResponseMessage OnChangeSetSuccess(this ODataController oDataController, Func<HttpResponseMessage> completionFunction)
-		//{
-		//	Contract.Requires<ArgumentNullException>(oDataController != null);
-		//	Contract.Requires<ArgumentNullException>(completionFunction != null);
-
-		//	return OnChangeSetSuccess(oDataController, new Task<HttpResponseMessage>(completionFunction)).Result;
-		//}
 		public static void OnChangeSetSuccess(this ODataController oDataController, Action completionFunction)
 		{
 			Contract.Requires<ArgumentNullException>(oDataController != null);
 			Contract.Requires<ArgumentNullException>(completionFunction != null);
 
-			OnChangeSetSuccess(oDataController, new Task(completionFunction)).RunSynchronously();
+			var task = OnChangeSetSuccess(oDataController, new Task(completionFunction));
+			if (! task.IsCompleted)
+			{
+				task.RunSynchronously();
+			}
 		}
 
 		/// <summary>
 		/// Set the async task to call when the changeset is complete, if the current request is within a changeset.
-		/// If the current request is not within a changeset, <paramref name="onSuccessTask"/> is run immediately.
+		/// If the current request is not within a changeset, <paramref name="completionTask"/> is returned.
 		/// </summary>
 		/// <param name="oDataController"></param>
 		/// <param name="completionTask"></param>
