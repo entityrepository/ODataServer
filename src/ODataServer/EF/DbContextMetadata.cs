@@ -64,7 +64,7 @@ namespace EntityRepository.ODataServer.EF
 		/// </remarks>
 		private void InitializeFrom(TDbContext dbContext, out IEntityTypeMetadata[] entityTypesMetadata, out IEntitySetMetadata[] entitySetsMetadata, out IEdmModel edmModel)
 		{
-			edmModel = dbContext.GetEdmModel();
+			var efEdmModel = dbContext.GetEdmModel();
 
 			var objectContextAdapter = dbContext as IObjectContextAdapter;
 			ObjectContext objectContext = objectContextAdapter.ObjectContext;
@@ -73,19 +73,19 @@ namespace EntityRepository.ODataServer.EF
 //			var entityContainer = cSpaceItems.OfType<EntityContainer>().Single();
 //			ItemCollection sSpaceItems = objectContext.MetadataWorkspace.GetItemCollection(DataSpace.SSpace);
 
-			EdmContainer = edmModel.FindDeclaredEntityContainer(objectContext.DefaultContainerName);
+			var efEdmContainer = efEdmModel.FindDeclaredEntityContainer(objectContext.DefaultContainerName);
 
 			if (Name == null)
 			{
-				Name = EdmContainer.Name;
+				Name = efEdmContainer.Name;
 			}
 			if (Namespace == null)
 			{
-				Namespace = EdmContainer.Namespace;
+				Namespace = efEdmContainer.Namespace;
 			}
 
 			List<IEntityTypeMetadata> entityTypesList = new List<IEntityTypeMetadata>();
-			foreach (IEdmEntityType edmEntityType in edmModel.SchemaElements.OfType<IEdmEntityType>())
+			foreach (IEdmEntityType edmEntityType in efEdmModel.SchemaElements.OfType<IEdmEntityType>())
 			{
 				EntityType entityType = cSpaceItems.OfType<EntityType>().Single(et => et.Name == edmEntityType.Name);
 				Type clrEntityType = entityType.GetClrType();
@@ -97,7 +97,7 @@ namespace EntityRepository.ODataServer.EF
 			entityTypesMetadata = entityTypesList.ToArray();
 
 			List<EntitySetMetadata> entitySetsList = new List<EntitySetMetadata>();
-			foreach (IEdmEntitySet edmEntitySet in EdmContainer.EntitySets())
+			foreach (IEdmEntitySet edmEntitySet in efEdmContainer.EntitySets())
 			{
 				var elementTypeMetadata = entityTypesMetadata.Single(m => m.EdmType == edmEntitySet.ElementType);
 				var elementTypeHierarchy = FindTypeHierarchyFrom(elementTypeMetadata, entityTypesMetadata);
@@ -106,7 +106,7 @@ namespace EntityRepository.ODataServer.EF
 			entitySetsMetadata = entitySetsList.Cast<IEntitySetMetadata>().ToArray();
 
 			// Iterate over the EntitySets a second time to populate the navigation properties
-			foreach (IEdmEntitySet edmEntitySet in EdmContainer.EntitySets())
+			foreach (IEdmEntitySet edmEntitySet in efEdmContainer.EntitySets())
 			{
 				EntitySetMetadata sourceEntitySet = entitySetsList.First(esm => ReferenceEquals(esm.EdmEntitySet, edmEntitySet));
 				List<INavigationMetadata> navigationMetadata = new List<INavigationMetadata>();
@@ -117,6 +117,10 @@ namespace EntityRepository.ODataServer.EF
 				}
 				sourceEntitySet.NavigationProperties = navigationMetadata;
 			}
+
+			edmModel = new FixedEfEdmModel(dbContext, entityTypesMetadata);
+
+			EdmContainer = edmModel.FindDeclaredEntityContainer(objectContext.DefaultContainerName);
 		}
 
 		private IEntityTypeMetadata[] FindTypeHierarchyFrom(IEntityTypeMetadata root, IEntityTypeMetadata[] allEntityTypes)

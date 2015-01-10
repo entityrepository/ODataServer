@@ -169,6 +169,7 @@
     <Compile Include="Batch\ODataServerBatchHandler.cs" />
     <Compile Include="Batch\ChangeSetExtensions.cs" />
     <Compile Include="EF\EfExtensions.cs" />
+    <Compile Include="EF\FixedEfEdmModel.cs" />
     <Compile Include="Ioc\ContainerExtensions.cs" />
     <Compile Include="Ioc\IModule.cs" />
     <Compile Include="Ioc\ODataServiceModule.cs" />
@@ -179,6 +180,7 @@
     <Compile Include="Model\INavigationMetadata.cs" />
     <Compile Include="Model\MultiContainerMetadata.cs" />
     <Compile Include="Model\NavigationMetadata.cs" />
+    <Compile Include="Model\ODataModelBuilderExtensions.cs" />
     <Compile Include="ODataController.cs" />
     <Compile Include="EntityRepositoryMetadataController.cs" />
     <Compile Include="Results\ChangeSetItemResult.cs" />

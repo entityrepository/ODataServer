@@ -17,6 +17,7 @@ namespace EntityRepository.ODataServer.Model
 	/// <summary>
 	/// Storage-independent model describing the structure of a container or context of entity sets and entity types.
 	/// </summary>
+	// TODO: Consider changing all of this to just use IEdmModel and related subtypes
 	[ContractClass(typeof(ContainerMetadataContract))]
 	public interface IContainerMetadata
 	{

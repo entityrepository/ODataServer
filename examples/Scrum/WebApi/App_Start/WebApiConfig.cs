@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using System.Web.Http.OData.Batch;
+using System.Web.Http.OData.Builder;
 using System.Web.Http.OData.Routing;
 using EntityRepository.ODataServer;
 using EntityRepository.ODataServer.EF;
@@ -48,7 +49,14 @@ namespace Scrum.WebApi
 			//oDataServerConfigurer.AddEntitySetController("Users", typeof(User), typeof(UsersController));
 
 			oDataServerConfigurer.AddStandardEntitySetControllers(DbSetControllerSelector);
+
+			//// TODO: Remove this - using to compare ODataConventionModelBuilder's EDM to what EF creates.
+			//var odataModelBuilder = new ODataConventionModelBuilder(config);
+			//odataModelBuilder.ConfigureFromContainer(oDataServerConfigurer.ContainerMetadata);
+
 			oDataServerConfigurer.ConfigureODataRoutes(config.Routes, "ODataRoute", ODataRoute, GlobalConfiguration.DefaultServer);
+				// TODO: Remove this arg
+				//odataModelBuilder.GetEdmModel());
 		}
 
 		/// <summary>

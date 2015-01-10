@@ -36,11 +36,18 @@ namespace Scrum.WebApi
 			container.RegisterLazy<ScrumDb>();
 
 			// Required: Register global datamodel metadata
-			container.RegisterSingle(typeof(IContainerMetadata<ScrumDb>), typeof(DbContextMetadata<ScrumDb>));
+//#define USE_CONTAINER
+#if (USE_CONTAINER)
+			container.RegisterSingle<IContainerMetadata<ScrumDb>, DbContextMetadata<ScrumDb>>();
 
 			// NOTE: The use of MultiContainerMetadata is unnecessary - could just skip the wrapper.
 			// The only reason to use MultiContainerMetadata here is to test it.
 			//container.RegisterSingle(typeof(IContainerMetadata), () => new MultiContainerMetadata<ODataContainer>(container.GetInstance<IContainerMetadata<ScrumDb>>()));
+#else
+			var mmRegistration = Lifestyle.Singleton.CreateRegistration<DbContextMetadata<ScrumDb>>(container);
+			container.AddRegistration(typeof(IContainerMetadata), mmRegistration);
+			container.AddRegistration(typeof(IContainerMetadata<ScrumDb>), mmRegistration);
+#endif
 
 			// or:
 			container.RegisterSingle(typeof(IContainerMetadata), typeof(DbContextMetadata<ScrumDb>));

@@ -192,10 +192,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Microsoft.AspNet.WebApi.Core.5.2.2\lib\net45\System.Web.Http.dll</HintPath>
     </Reference>
-    <Reference Include="System.Web.Http.OData, Version=5.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <!--<Reference Include="System.Web.Http.OData, Version=5.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Microsoft.AspNet.WebApi.OData.5.3.0\lib\net45\System.Web.Http.OData.dll</HintPath>
-    </Reference>
+    </Reference>-->
     <Reference Include="System.Web.Http.Tracing, Version=5.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Microsoft.AspNet.WebApi.Tracing.5.2.2\lib\net45\System.Web.Http.Tracing.dll</HintPath>
@@ -271,6 +271,10 @@
     <Folder Include="App_Data\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\aspnetwebstack\OData\src\System.Web.Http.OData\System.Web.Http.OData.csproj">
+      <Project>{cf73aaa7-ace9-4c91-afa5-5ec1df18feee}</Project>
+      <Name>System.Web.Http.OData</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\src\ODataServer\EntityRepository.ODataServer.csproj">
       <Project>{83ED0B11-7601-41D4-A9FC-1B5C3EAA2911}</Project>
       <Name>EntityRepository.ODataServer</Name>

@@ -77,6 +77,14 @@ namespace EntityRepository.ODataServer
 		}
 
 		/// <summary>
+		/// Returns the <see cref="IContainerMetadata"/> used by this <see cref="ODataServerConfigurer"/>.
+		/// </summary>
+		public IContainerMetadata ContainerMetadata
+		{
+			get { return _containerMetadata; }
+		}
+
+		/// <summary>
 		/// Add an entity set controller of type <paramref name="controllerType"/> for the specified <paramref name="entitySetName"/> and <paramref name="entityType"/>.
 		/// </summary>
 		/// <param name="entitySetName"></param>
@@ -177,10 +185,17 @@ namespace EntityRepository.ODataServer
 		/// <param name="routes"></param>
 		/// <param name="routeName"></param>
 		/// <param name="routePrefix"></param>
-		/// <param name="httpServer"></param>
-		public void ConfigureODataRoutes(HttpRouteCollection routes, string routeName, string routePrefix, HttpServer httpServer, int? maxOperationsPerChangeset = null)
+		/// <param name="httpServer">A web API <see cref="HttpServer"/> instance.</param>
+		/// <param name="edmModel">An <see cref="IEdmModel"/>, to override the EDM model that would be created by <see cref="ContainerMetadata"/>.</param>
+		/// <param name="maxOperationsPerChangeset"></param>
+		public void ConfigureODataRoutes(HttpRouteCollection routes, string routeName, string routePrefix, HttpServer httpServer, IEdmModel edmModel = null, int? maxOperationsPerChangeset = null)
 		{
-		    var batchHandler = new ODataServerBatchHandler(httpServer);
+			Contract.Requires<ArgumentNullException>(routes != null);
+			Contract.Requires<ArgumentException>(! string.IsNullOrWhiteSpace(routeName));
+			Contract.Requires<ArgumentNullException>(routePrefix != null);
+			Contract.Requires<ArgumentNullException>(httpServer != null);
+			
+			var batchHandler = new ODataServerBatchHandler(httpServer);
 
 		    if (maxOperationsPerChangeset != null)
 		    {
@@ -189,12 +204,11 @@ namespace EntityRepository.ODataServer
 
 		    routes.MapODataServiceRoute(routeName,
 			                            routePrefix,
-			                            BuildEdmModel(),
+										edmModel ?? _containerMetadata.EdmModel,
 			                            new DefaultODataPathHandler(),
 			                            GetRoutingConventions(),
 			                            batchHandler);
 		}
-
 
 		/// <summary>
 		/// Builds the <see cref="IEdmModel"/> for the odata service based on the entityset controllers that have been configured.
