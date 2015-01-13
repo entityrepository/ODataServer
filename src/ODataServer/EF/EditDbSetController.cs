@@ -186,7 +186,7 @@ namespace EntityRepository.ODataServer.EF
 
         #region Support for Create-Update-Delete operations on links
 
-        public override void CreateLink(TKey key, string navigationProperty, [FromBody] Uri link)
+        public override void CreateLink([FromODataUri] TKey key, string navigationProperty, [FromBody] Uri link)
         {
             TEntity entity = DbSet.Find(key);
             if (entity == null)
