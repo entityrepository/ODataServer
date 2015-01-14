@@ -243,6 +243,18 @@ namespace EntityRepository.ODataServer
 			throw EntitySetControllerHelpers.NotImplementedResponseException(this, "DELETE Link");
 		}
 
+        /// <summary>
+        /// This method should be overridden to handle DELETE requests that attempt to break a relationship between two entities.
+        /// </summary>
+        /// <param name="key">The key of the entity with the navigation property.</param>
+        /// <param name="navigationProperty">The name of the navigation property.</param>
+        public virtual void DeleteLink([FromODataUri] TKey key, string navigationProperty) 
+        {
+            Contract.Requires<ArgumentException>(!string.IsNullOrWhiteSpace(navigationProperty));
+
+            throw EntitySetControllerHelpers.NotImplementedResponseException(this, "DELETE Link");
+        }
+
 		/// <summary>
 		/// This method should be overridden to handle DELETE requests that attempt to break a relationship between two entities.
 		/// </summary>

@@ -59,7 +59,7 @@ namespace EntityRepository.ODataServer.EF
         /// </summary>
         private void SaveChanges()
         {
-            if (! IsDbCreated)
+            if (!IsDbCreated)
             {
                 return;
             }
@@ -205,7 +205,7 @@ namespace EntityRepository.ODataServer.EF
 
             // Fetch the linked object either via a ChangeSet/Content-ID reference, or by fetching it from the database.
             object linkedObject = null;
-            if (! Request.ContentIdReferenceToEntity(link.OriginalString, out linkedObject))
+            if (!Request.ContentIdReferenceToEntity(link.OriginalString, out linkedObject))
             {
                 linkedObject = GetEntityForLink(link);
             }
@@ -234,15 +234,23 @@ namespace EntityRepository.ODataServer.EF
 
             // Find the containing entity
             TEntity entity = DbSet.Find(key);
-            if (entity == null) {
+            if (entity == null)
+            {
                 string error = string.Format("Entity lookup failed for key {0} in {1}", key, DbSet);
                 throw new ArgumentException(error, "key");
             }
 
-            if (edmNavigationProperty.Type.IsCollection()) {
+            if (edmNavigationProperty.Type.IsCollection())
+            {
+                if (linkedObject == null)
+                {
+                    throw new ArgumentNullException("linkedObject", "A valid object to be deleted must be provided to remove from a collection property.");
+                }
                 object propertyCollection = entity.GetPropertyValue(navigationProperty);
                 propertyCollection.InvokeMethod("Remove", linkedObject);
-            } else {
+            }
+            else
+            {
                 entity.SetPropertyValue(navigationProperty, null);
             }
 
@@ -264,6 +272,11 @@ namespace EntityRepository.ODataServer.EF
             DeleteLink(key, navigationProperty, linkedObject);
         }
 
+        public override void DeleteLink([FromODataUri] TKey key, string navigationProperty)
+        {
+            DeleteLink(key, navigationProperty, null);
+        }
+
         public override void DeleteLink([FromODataUri] TKey key, string relatedKey, string navigationProperty)
         {
             IEdmNavigationProperty edmNavigationProperty = GenericNavigationPropertyRoutingConvention.GetNavigationProperty(Request.ODataProperties().Path);
@@ -272,7 +285,10 @@ namespace EntityRepository.ODataServer.EF
             // Get the DbSet containing the linked object
             IEdmSchemaType schemaType = ((Microsoft.Data.Edm.Library.EdmNavigationProperty) edmNavigationProperty.Partner).DeclaringEntityType;
             Type relatedType = ContainerMetadata.GetEntitySetFor(schemaType).ElementTypeMetadata.ClrType;
-            object linkKey = ODataUriUtils.ConvertFromUriLiteral(relatedKey, ODataVersion.V3, Request.ODataProperties().Model, Request.ODataProperties().Path.EntitySet.GetSingleKeyType());
+            object linkKey = ODataUriUtils.ConvertFromUriLiteral(relatedKey,
+                                                                 ODataVersion.V3,
+                                                                 Request.ODataProperties().Model,
+                                                                 Request.ODataProperties().Path.EntitySet.GetSingleKeyType());
             object linkedObject = Db.Set(relatedType).Find(linkKey);
             if (linkedObject == null)
             {
