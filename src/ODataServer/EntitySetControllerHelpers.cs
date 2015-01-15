@@ -283,7 +283,7 @@ namespace EntityRepository.ODataServer
 			var tmpRequest = new HttpRequestMessage(HttpMethod.Get, link);
 
 			// Send this request through the routing process.
-			var routeData = newRoute.GetRouteData(request.GetConfiguration().VirtualPathRoot, tmpRequest);
+			var routeData = newRoute.GetRouteData(request.GetRequestContext().VirtualPathRoot, tmpRequest);
 
 			// If the GET request matches the route, use the path segments to find the key.
 			if (routeData != null)
