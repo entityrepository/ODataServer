@@ -22,7 +22,7 @@ namespace Scrum.WebApi.IntegrationTests
 	public sealed class ScrumODataTests : BaseScrumODataTest
 	{
 
-		[xunitExt.Fact]
+		[Fact]
 		public void GetExpandQueryWorks()
 		{
 			using (var server = CreateTestScrumServer())
@@ -39,7 +39,7 @@ namespace Scrum.WebApi.IntegrationTests
 		/// <summary>
 		/// Ensure that non-batch change requests succeed through OWIN
 		/// </summary>
-		[xunitExt.Fact]
+		[Fact]
 		public void NonBatchChangeRequestsAgainstTestServer()
 		{
 			using (var testServer = CreateTestScrumServer())
@@ -51,7 +51,7 @@ namespace Scrum.WebApi.IntegrationTests
 		/// <summary>
 		/// Ensure that non-batch change requests succeed through IIS
 		/// </summary>
-		[xunitExt.Fact(Skip = "Disabled b/c IIS server setup not implemented; this test can be manually run.")]
+		[Fact(Skip = "Disabled b/c IIS server setup not implemented; this test can be manually run.")]
 		public void NonBatchChangeRequestsAgainstIis()
 		{
 			using (var httpClient = new HttpClient() { BaseAddress = new Uri("http://localhost:27704") })

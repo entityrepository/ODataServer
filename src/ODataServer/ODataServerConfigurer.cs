@@ -149,16 +149,13 @@ namespace EntityRepository.ODataServer
 		{
 			Contract.Requires<ArgumentNullException>(controllerTypeSelector != null);
 
-			// All existing controllers are defined in the fallback controller
-			IDictionary<string, HttpControllerDescriptor> existingControllers = _controllerSelector.GetFallbackControllerMapping();
-
 			foreach (IEntitySetMetadata entitySetMetadata in _containerMetadata.EntitySets)
 			{
 				// Only add the standard controller if there's not already a controller with the same name defined
 				string entitySetName = entitySetMetadata.Name;
 
 				HttpControllerDescriptor controllerDescriptor;
-				if (! existingControllers.TryGetValue(entitySetName, out controllerDescriptor))
+				if (! _controllerSelector.TryGetController(entitySetName, out controllerDescriptor))
 				{
 					var entityTypeMetadata = entitySetMetadata.ElementTypeMetadata;
 

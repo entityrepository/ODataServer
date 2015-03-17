@@ -77,6 +77,18 @@ namespace EntityRepository.ODataServer.Routing
 		}
 
 		/// <summary>
+		/// Attempts looking up a controller by name, first using the registered entity set controllers, then using fallback controllers.
+		/// </summary>
+		/// <param name="controllerName"></param>
+		/// <param name="httpControllerDescriptor"></param>
+		/// <returns></returns>
+		public bool TryGetController(string controllerName, out HttpControllerDescriptor httpControllerDescriptor)
+		{
+			return _managedControllers.TryGetValue(controllerName, out httpControllerDescriptor)
+			       || _fallbackControllerSelector.GetControllerMapping().TryGetValue(controllerName, out httpControllerDescriptor);
+		}
+
+		/// <summary>
 		/// Returns the mapping of names to <see cref="HttpControllerDescriptor"/> from the default <see cref="IHttpControllerSelector"/>'s mapping.
 		/// </summary>
 		public IDictionary<string, HttpControllerDescriptor> GetFallbackControllerMapping()
