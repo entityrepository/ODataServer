@@ -1,0 +1,8 @@
+This example is adapted from the Breeze odata example:
+http://www.getbreezenow.com/samples/breeze-web-api-odata
+
+The Breeze license is the MIT license:
+http://www.getbreezenow.com/license
+http://opensource.org/licenses/mit-license.php
+
+
