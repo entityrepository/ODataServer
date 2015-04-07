@@ -107,6 +107,7 @@ namespace Scrum.Dal
 		public DbSet<ProjectVersion> ProjectVersions { get; set; }
 		public DbSet<Sprint> Sprints { get; set; }
 		public DbSet<User> Users { get; set; }
+		public DbSet<UserGroup> UserGroups { get; set; }
 		public DbSet<WorkItem> WorkItems { get; set; }
 		public DbSet<WorkItemMessage> WorkItemMessages { get; set; }
 		public DbSet<WorkItemPropertyChange> WorkItemPropertyChanges { get; set; }
@@ -147,6 +148,10 @@ namespace Scrum.Dal
 			modelBuilder.Entity<WorkItemPropertyChange>().HasRequired(c => c.WorkItem).WithMany();
 
 			modelBuilder.Entity<WorkItemTimeLog>().HasRequired(l => l.Worker).WithMany().WillCascadeOnDelete(false);
+
+			// Use Table per Type convention
+			modelBuilder.Entity<ProjectArea>().ToTable("ProjectAreas");
+			modelBuilder.Entity<ExtendedProjectArea>().ToTable("ExtendedProjectAreas");
 
 			// For the DbEnum subclasses, turn off autoincrement so IDs of 0 can work
 			modelBuilder.Entity<Priority>().Property(priority => priority.ID).HasDatabaseGeneratedOption(DatabaseGeneratedOption.None);

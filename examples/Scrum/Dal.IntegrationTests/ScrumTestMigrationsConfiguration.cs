@@ -23,14 +23,21 @@ namespace Scrum.Dal.IntegrationTests
 
 		protected override void Seed(ScrumDb scrumDb)
 		{
+			// Skip rest of seed iff values are already present
+			if ((scrumDb.Priority.Count() >= Priority.All.Count())
+				&& (scrumDb.Users.Count() >= 2)
+				&& (scrumDb.Projects.Count() >= 2))
+			{
+				return;
+			}
+
 			// Add DbEnum-like values
 			SeedStaticReadOnlyFieldValues<Priority>(scrumDb);
 			SeedStaticReadOnlyFieldValues<Status>(scrumDb);
 
 			User joeUser = new User { UserName = "joe", Email = "joe@domain.com" };
-			scrumDb.Users.Add(joeUser);
 			User gailUser = new User { UserName = "gail", Email = "gail@domain.com" };
-			scrumDb.Users.Add(gailUser);
+			scrumDb.Users.AddOrUpdate(user => user.UserName, joeUser, gailUser);
 
 			Project infraProject = scrumDb.Projects.Create();
 			infraProject.Key = "INFRA";
