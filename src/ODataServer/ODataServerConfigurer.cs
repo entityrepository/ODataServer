@@ -200,7 +200,7 @@ namespace EntityRepository.ODataServer
 		/// Builds the <see cref="IEdmModel"/> for the odata service based on the entityset controllers that have been configured.
 		/// </summary>
 		/// <returns></returns>
-		public IEdmModel BuildEdmModel()
+		public virtual IEdmModel BuildEdmModel()
 		{
 			ODataConventionModelBuilder modelBuilder = new ODataConventionModelBuilder(_webApiConfig);
 
@@ -220,7 +220,7 @@ namespace EntityRepository.ODataServer
 		/// so that the caller can modify <paramref name="modelBuilder"/> before or after the entity sets are added.
 		/// </summary>
 		/// <param name="modelBuilder">An <see cref="ODataModelBuilder"/> or <see cref="ODataConventionModelBuilder"/>.</param>
-		public void ConfigureModelBuilder(ODataModelBuilder modelBuilder)
+		public virtual void ConfigureModelBuilder(ODataModelBuilder modelBuilder)
 		{
 			modelBuilder.ContainerName = _containerMetadata.Name;
 			modelBuilder.Namespace = _containerMetadata.Namespace;
@@ -244,7 +244,7 @@ namespace EntityRepository.ODataServer
 		/// Returns the standard routing conventions, plus some common routing conventions needed for the controllers in this library to work.
 		/// </summary>
 		/// <returns></returns>
-		public IEnumerable<IODataRoutingConvention> GetRoutingConventions()
+		public virtual IEnumerable<IODataRoutingConvention> GetRoutingConventions()
 		{
 			IList<IODataRoutingConvention> routingConventions = ODataRoutingConventions.CreateDefault();
 			routingConventions.Insert(0, new GenericNavigationPropertyRoutingConvention());
