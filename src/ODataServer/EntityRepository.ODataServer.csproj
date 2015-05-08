@@ -115,6 +115,7 @@
     <Reference Include="EntityFramework">
       <HintPath>..\..\packages\EntityFramework.6.1.1\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Data.Edm, Version=5.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Microsoft.Data.Edm.5.6.2\lib\net40\Microsoft.Data.Edm.dll</HintPath>
@@ -179,12 +180,14 @@
     <Compile Include="Model\MultiContainerMetadata.cs" />
     <Compile Include="Model\NavigationMetadata.cs" />
     <Compile Include="ODataController.cs" />
+    <Compile Include="EntityRepositoryMetadataController.cs" />
     <Compile Include="Results\ChangeSetItemResult.cs" />
     <Compile Include="Results\CreatedItemResult.cs" />
     <Compile Include="Results\IDelayedActionResult.cs" />
     <Compile Include="Results\PendingHttpResponseMessage.cs" />
     <Compile Include="Results\UpdatedItemResult.cs" />
     <Compile Include="Routing\ActionMapExtensions.cs" />
+    <Compile Include="Routing\EntityRepositoryMetadataRoutingConvention.cs" />
     <Compile Include="Routing\EntityRepositoryActionSelector.cs" />
     <Compile Include="Routing\RenamedReflectedHttpActionDescriptor.cs" />
     <Compile Include="Routing\RoutingExtensions.cs" />

@@ -40,7 +40,10 @@ namespace Scrum.WebApi
 
 			// NOTE: The use of MultiContainerMetadata is unnecessary - could just skip the wrapper.
 			// The only reason to use MultiContainerMetadata here is to test it.
-			container.RegisterSingle(typeof(IContainerMetadata), () => new MultiContainerMetadata<ODataContainer>(container.GetInstance<IContainerMetadata<ScrumDb>>()));
+			//container.RegisterSingle(typeof(IContainerMetadata), () => new MultiContainerMetadata<ODataContainer>(container.GetInstance<IContainerMetadata<ScrumDb>>()));
+
+			// or:
+			container.RegisterSingle(typeof(IContainerMetadata), typeof(DbContextMetadata<ScrumDb>));
 
 			// Query validation settings could be specified here
 			container.RegisterSingle(new ODataValidationSettings()

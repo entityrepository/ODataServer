@@ -31,7 +31,7 @@ namespace EntityRepository.ODataServer.Ioc
 			container.RegisterOpenGeneric(typeof(ReadOnlyDbSetController<,,>), typeof(ReadOnlyDbSetController<,,>));
 			container.RegisterOpenGeneric(typeof(EditDbSetController<,,>), typeof(EditDbSetController<,,>));
 
-			container.Register<ODataMetadataController>();
+			container.Register<EntityRepositoryMetadataController>();
 
 			// Default query validation settings (can be overridden)
 			container.RegisterSingle(new ODataValidationSettings

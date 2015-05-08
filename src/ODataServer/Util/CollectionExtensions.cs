@@ -62,5 +62,28 @@ namespace EntityRepository.ODataServer.Util
 			}
 		}
 
+		public static void ReplaceSingle<T>(this IList<T> list, Predicate<T> findPredicate, T replacement)
+		{
+			int foundIndex = -1;
+			for (int i = 0; i < list.Count; ++i)
+			{
+				if (findPredicate(list[i]))
+				{
+					if (foundIndex != -1)
+					{
+						throw new ArgumentException("Multiple elements found that match predicate");
+					}
+					foundIndex = i;
+				}
+			}
+
+			if (foundIndex < 0)
+			{
+				throw new ArgumentException("No elements found that match predicate");
+			}
+
+			list[foundIndex] = replacement;
+		}
+
 	}
 }

@@ -7,8 +7,11 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Validation;
+using System.IO;
 using System.Linq;
+using System.Xml;
 using Scrum.Model;
 using Xunit;
 using Xunit.Extensions;
@@ -45,7 +48,6 @@ namespace Scrum.Dal.IntegrationTests
 				}
 			}
 		}
-
 
 	}
 }

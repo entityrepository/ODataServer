@@ -247,6 +247,10 @@ namespace EntityRepository.ODataServer
 		public virtual IEnumerable<IODataRoutingConvention> GetRoutingConventions()
 		{
 			IList<IODataRoutingConvention> routingConventions = ODataRoutingConventions.CreateDefault();
+			
+			// Replace the MetadataRoutingConvention
+			routingConventions.ReplaceSingle(convention => convention is System.Web.Http.OData.Routing.Conventions.MetadataRoutingConvention, new EntityRepositoryMetadataRoutingConvention());
+
 			routingConventions.Insert(0, new GenericNavigationPropertyRoutingConvention());
 			return routingConventions;
 		}

@@ -103,7 +103,7 @@ namespace EntityRepository.ODataServer.EF
 				var elementTypeHierarchy = FindTypeHierarchyFrom(elementTypeMetadata, entityTypesMetadata);
 				entitySetsList.Add(new EntitySetMetadata(dbContext.GetType(), this, edmEntitySet, elementTypeMetadata, elementTypeHierarchy));
 			}
-			entitySetsMetadata = entitySetsList.ToArray();
+			entitySetsMetadata = entitySetsList.Cast<IEntitySetMetadata>().ToArray();
 
 			// Iterate over the EntitySets a second time to populate the navigation properties
 			foreach (IEdmEntitySet edmEntitySet in EdmContainer.EntitySets())
