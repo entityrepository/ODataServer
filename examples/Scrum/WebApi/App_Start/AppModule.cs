@@ -6,6 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+//#define USE_CONTAINER
+
 using EntityRepository.ODataServer.EF;
 using EntityRepository.ODataServer.Ioc;
 using EntityRepository.ODataServer.Model;
@@ -36,7 +38,6 @@ namespace Scrum.WebApi
 			container.RegisterLazy<ScrumDb>();
 
 			// Required: Register global datamodel metadata
-//#define USE_CONTAINER
 #if (USE_CONTAINER)
 			container.RegisterSingle<IContainerMetadata<ScrumDb>, DbContextMetadata<ScrumDb>>();
 

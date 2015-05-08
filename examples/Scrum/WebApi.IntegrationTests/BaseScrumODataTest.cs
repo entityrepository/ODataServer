@@ -7,8 +7,10 @@
 
 using System.Net.Http;
 using System.Net.Http.Headers;
+using LogJam.Config;
 using Microsoft.Owin.Testing;
 using Newtonsoft.Json.Linq;
+using Owin;
 using Xunit;
 
 namespace Scrum.WebApi.IntegrationTests
@@ -45,6 +47,9 @@ namespace Scrum.WebApi.IntegrationTests
 			{
 				app.Properties["host.AppName"] = appName;
 				app.Properties["Adap.InUnitTest"] = true;
+
+				// TODO: For xunit2, log to xunit2 test output
+				app.GetLogManager().Config.UseConsole();
 
 				// Add any "beginning of request pipeline" test-specific configuration here.
 

@@ -7,8 +7,13 @@
 // -----------------------------------------------------------------------
 
 
+using System.Linq;
 using System.Web.Http;
 using EntityRepository.ODataServer.Ioc;
+using LogJam.Config;
+using LogJam.Trace;
+using LogJam.Trace.Config;
+using LogJam.Trace.Switches;
 using Microsoft.Owin;
 using Owin;
 using SimpleInjector;
@@ -57,11 +62,13 @@ namespace Scrum.WebApi.IntegrationTests
 
 		private void ConfigureOwinLogging(IAppBuilder owinAppBuilder, Container diContainer)
 		{
-			owinAppBuilder.UseTracerLogging();
+			owinAppBuilder.UseOwinTracerLogging();
+
 			diContainer.RegisterSingle(owinAppBuilder.GetTracerFactory());
 
-			owinAppBuilder.LogHttpRequests(logRequestBodies: true, logResponseBodies: false /* Log response bodies HANGS WITH Microsoft.Owin.Testing.ResponseStream */);
-
+			ILogWriterConfig[] configuredLogWriters = owinAppBuilder.GetLogManagerConfig().Writers.ToArray();
+			owinAppBuilder.TraceTo(configuredLogWriters);
+			owinAppBuilder.LogHttpRequests(configuredLogWriters);
 			owinAppBuilder.TraceExceptions(logFirstChance: false, logUnhandled: true);
 		}
 

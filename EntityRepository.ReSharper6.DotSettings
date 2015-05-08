@@ -928,7 +928,7 @@ II.2.12 &lt;HandlesEvent /&gt;&#xD;
 	<s:String x:Key="/Default/CodeStyle/FileHeader/FileHeaderText/@EntryValue">-----------------------------------------------------------------------&#xD;
 &lt;copyright file="$FILENAME$" company="EntityRepository Contributors" year="2013"&gt;&#xD;
 This software is part of the EntityRepository library&#xD;
-Copyright © 2012 EntityRepository Contributors&#xD;
+Copyright © 2012-2015 EntityRepository Contributors&#xD;
 http://entityrepository.codeplex.org/&#xD;
 &lt;/copyright&gt;&#xD;
 -----------------------------------------------------------------------</s:String>
