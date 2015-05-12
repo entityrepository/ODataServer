@@ -30,11 +30,7 @@ namespace Scrum.WebApi
 		/// <param name="container"></param>
 		public void RegisterServices(Container container)
 		{
-			// Support sharing the DbContext amongst objects participating in a single request;
-			// but if there is no request, just make it transient.
-			var webApiRequestLifestyle = new WebApiRequestLifestyle(true);
-			var hybridLifestyle = Lifestyle.CreateHybrid(() => webApiRequestLifestyle.GetCurrentScope(container) == null, Lifestyle.Transient, webApiRequestLifestyle);
-			container.Register<ScrumDb>(hybridLifestyle);
+			container.RegisterWebApiRequestOrTransient<ScrumDb>();
 			container.RegisterLazy<ScrumDb>();
 
 			// Required: Register global datamodel metadata
