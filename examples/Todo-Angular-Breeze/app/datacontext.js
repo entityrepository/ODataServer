@@ -97,16 +97,18 @@
 
         function save() {
             var count = getChangesCount();
-            var promise = null;
-            var saveBatches = prepareSaveBatches();
-            saveBatches.forEach(function (batch) {
-                // ignore empty batches (except 'null' which means "save everything else")
-                if (batch == null || batch.length > 0) {
-                    promise = promise ?
-                        promise.then(function () { return manager.saveChanges(batch); }) :
-                        manager.saveChanges(batch);
-                }
-            });
+            var promise = manager.saveChanges();
+
+			// Not needed: EntityRepository adds all changes, then saves them in a single transaction.
+            //var saveBatches = prepareSaveBatches();
+            //saveBatches.forEach(function (batch) {
+            //    // ignore empty batches (except 'null' which means "save everything else")
+            //    if (batch == null || batch.length > 0) {
+            //        promise = promise ?
+            //            promise.then(function () { return manager.saveChanges(batch); }) :
+            //            manager.saveChanges(batch);
+            //    }
+            //});
             return promise.then(success).catch(failed);
 
             function success(result) {

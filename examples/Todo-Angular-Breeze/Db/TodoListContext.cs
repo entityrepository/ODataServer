@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using ODataBreezejsSample.Models;
 
-namespace ODataBreezejsSample.Models
+namespace ODataBreezejsSample.Db
 {
     public class TodoListContext : DbContext
     {

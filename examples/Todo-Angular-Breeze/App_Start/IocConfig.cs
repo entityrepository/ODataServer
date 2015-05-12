@@ -9,6 +9,7 @@ using System.Web.Http.OData.Query;
 using EntityRepository.ODataServer.EF;
 using EntityRepository.ODataServer.Ioc;
 using EntityRepository.ODataServer.Model;
+using ODataBreezejsSample.Db;
 using ODataBreezejsSample.Models;
 using SimpleInjector;
 using SimpleInjector.Integration.WebApi;
