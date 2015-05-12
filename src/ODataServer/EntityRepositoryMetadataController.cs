@@ -22,6 +22,7 @@ using System.Web.Http.Description;
 using System.Web.Http.OData.Extensions;
 using System.Web.Http.Tracing;
 using System.Xml;
+using EntityRepository.ODataServer.Edm;
 using EntityRepository.ODataServer.Model;
 using Microsoft.Data.Edm;
 using Microsoft.Data.Edm.Csdl;
@@ -33,13 +34,14 @@ namespace EntityRepository.ODataServer
 {
 
 	/// <summary>
-	/// Wraps and replaces <see cref="System.Web.Http.OData.ODataMetadataController"/> 
+	/// Replaces <see cref="System.Web.Http.OData.ODataMetadataController"/> 
 	/// </summary>
 	[System.Web.Http.OData.ODataFormatting]
 	[System.Web.Http.OData.ODataRouting]
 	[ApiExplorerSettings(IgnoreApi = true)]
 	public sealed class EntityRepositoryMetadataController : ApiController
 	{
+		private static readonly Version s_defaultEdmxVersion = new Version(1, 0);
 
 		private readonly IContainerMetadata _containerMetadata;
 
@@ -53,16 +55,24 @@ namespace EntityRepository.ODataServer
 		/// <summary>
 		/// Generates the OData $metadata document.
 		/// </summary>
+		/// <param name="modelMetadata"><c>true</c> to expose the model metadata; <c>false</c> to use the web API odata model (the default for Web API odata).</param>
+		/// <param name="includeClrInfo">Currently has not effect</param>
 		/// <returns>The <see cref="IEdmModel"/> representing $metadata.</returns>
-		public HttpResponseMessage GetMetadata(bool includeClrInfo = false)
+		public HttpResponseMessage GetMetadata(bool modelMetadata = true, bool includeClrInfo = false)
 		{
 			var request = Request;
 			var response = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request };
 			response.Headers.Add("DataServiceVersion", "3.0");
 
 			// Write the Metadata EDMX to a 
-			var edmModel = GetModel();
+			var edmModel = GetModel(modelMetadata);
 			IEnumerable<EdmError> writeErrors;
+
+			if (includeClrInfo == false)
+			{
+				edmModel.RemoveClrTypeAnnotations();
+			}
+
 			//response.Content = new PushStreamContent((stream, httpContent, transportContext) =>
 			//										 {
 			//											 using (XmlWriter xmlWriter = XmlWriter.Create(stream))
@@ -81,7 +91,7 @@ namespace EntityRepository.ODataServer
 
 			var memStream = new MemoryStream(4096);
 			Encoding xmlEncoding;
-			using (XmlWriter xmlWriter = XmlWriter.Create(memStream))
+			using (XmlWriter xmlWriter = XmlWriter.Create(memStream, new XmlWriterSettings() { Indent = true }))
 			{
 				EdmxWriter.TryWriteEdmx(edmModel, xmlWriter, EdmxTarget.OData, out writeErrors);
 				xmlEncoding = xmlWriter.Settings.Encoding;
@@ -114,7 +124,7 @@ namespace EntityRepository.ODataServer
 			IEnumerable<IEdmEntitySet> entitysets = container.EntitySets();
 
 			IEnumerable<ODataResourceCollectionInfo> collections = entitysets.Select(
-				e => GetODataResourceCollectionInfo(GetEntitySetUrl(model, e), e.Name));
+				e => GetODataResourceCollectionInfo(model.GetEntitySetUrl(e), e.Name));
 			workspace.Collections = collections;
 
 			return workspace;
@@ -133,40 +143,26 @@ namespace EntityRepository.ODataServer
 			return info;
 		}
 
-		private IEdmModel GetModel()
+		private IEdmModel GetModel(bool useModelMetadata = true)
 		{
-			IEdmModel model = _containerMetadata.EdmModel;
-
-			// Default web API odata impl:
-			//IEdmModel model = Request.ODataProperties().Model;
-			//if (model == null)
-			//{
-			//	throw new InvalidOperationException("Request must have an OData model");
-			//}
-			// model.SetEdmxVersion(s_defaultEdmxVersion);
-
-			return model;
-		}
-
-		// Equivalent to model.GetEntitySetUrl(e).ToString()- which is internal
-		private string GetEntitySetUrl(IEdmModel edmModel, IEdmEntitySet edmEntitySet)
-		{
-			object o = edmModel.DirectValueAnnotationsManager.GetAnnotationValue(edmEntitySet, "http://schemas.microsoft.com/ado/2011/04/edm/internal", "System_Web_Http_OData_Builder_EntitySetUrlAnnotation");
-			if (o == null)
+			IEdmModel model;
+			if (useModelMetadata)
 			{
-				// throw new InvalidOperationException("Couldn't find EntitySetUrlAnnotation for EntitySet " + edmEntitySet.Name);
-				return edmEntitySet.Name;
-			}
-			PropertyInfo propertyInfo = o.GetType().GetProperty("Url", BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-			if (propertyInfo != null)
-			{
-				return propertyInfo.GetValue(o).ToString();
+				model = _containerMetadata.EdmModel;
 			}
 			else
 			{
-				return edmEntitySet.Name;
+				// Default web API odata impl:
+				model = Request.ODataProperties().Model;
+				if (model == null)
+				{
+					throw new InvalidOperationException("Request must have an OData model");
+				}
 			}
- 		}
+			model.SetEdmxVersion(s_defaultEdmxVersion);
+
+			return model;
+		}
 
 	}
 

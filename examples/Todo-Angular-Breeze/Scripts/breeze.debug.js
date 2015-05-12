@@ -23,7 +23,7 @@
 })(this, function (global) {
     "use strict"; 
     var breeze = {
-        version: "1.5.2",
+        version: "1.5.4",
         metadataVersion: "1.0.5"
     };
     ;/**
@@ -34,7 +34,7 @@ var __hasOwnProperty = uncurry(Object.prototype.hasOwnProperty);
 var __arraySlice = uncurry(Array.prototype.slice);
 var __isES5Supported = function () {
   try {
-    return !!Object.getPrototypeOf && Object.defineProperty({}, 'x', {});
+    return !!(Object.getPrototypeOf && Object.defineProperty({}, 'x', {}));
   } catch (e) {
     return false;
   }
@@ -92,7 +92,7 @@ function __getPropDescriptor(obj, propertyName) {
   }
 }
 
-// Functional extensions 
+// Functional extensions
 
 // can be used like: persons.filter(propEq("firstName", "John"))
 function __propEq(propertyName, value) {
@@ -757,7 +757,7 @@ var Param = (function () {
     return addContext(this, {
       fn: isTypeOf,
       typeName: typeName,
-      msg: __formatString("must be a '%1'", typeName)
+       msg: "must be a '" + typeName + "'"
     });
   };
 
@@ -773,7 +773,7 @@ var Param = (function () {
       fn: isInstanceOf,
       type: type,
       typeName: typeName,
-      msg: __formatString("must be an instance of '%1'", typeName)
+      msg: "must be an instance of '" + typeName + "'"
     });
   };
 
@@ -786,7 +786,7 @@ var Param = (function () {
     return addContext(this, {
       fn: hasProperty,
       propertyName: propertyName,
-      msg: __formatString("must have a '%1' property ", propertyName)
+      msg: "must have a '" + propertyName + "' property"
     });
   };
 
@@ -799,7 +799,7 @@ var Param = (function () {
     return addContext(this, {
       fn: isEnumOf,
       enumType: enumType,
-      msg: __formatString("must be an instance of the '%1' enumeration", enumType.name)
+      msg: "must be an instance of the '" + enumType.name + "' enumeration"
     });
   };
 
@@ -1588,8 +1588,8 @@ var Event = (function () {
     if (obj._getEventParent === undefined) {
       throw new Error("This object does not support event enabling/disabling");
     }
-    // return ctor._isEnabled(obj, getFullEventName(eventName));
-    return ctor._isEnabled(obj, eventName);
+    // return ctor._isEnabled(getFullEventName(eventName), obj);
+    return ctor._isEnabled(eventName, obj);
   };
 
   ctor._isEnabled = function (eventName, obj) {
@@ -2392,8 +2392,8 @@ var Validator = (function () {
           return (core.stringStartsWith(v, "US"));
       };
       var countryValidator = new Validator("countryIsUS", valFn, { displayName: "Country" });
-      Validator.messageTemplates["countryIsUS", "'%displayName%' must start with 'US'");
-      This will have a similar effect to this
+      Validator.messageTemplates.countryIsUS = "'%displayName%' must start with 'US'";
+      // This will have a similar effect to this
       var countryValidator = new Validator("countryIsUS", valFn, {
           displayName: "Country", 
           messageTemplate: "'%displayName%' must start with 'US'" 
@@ -2921,7 +2921,10 @@ var Validator = (function () {
   }
 
   function intRangeValidatorCtor(validatorName, minValue, maxValue, context) {
-    var templateExists = (context && context.messageTemplate) || ctor.messageTemplates[validatorName];
+    context = context || {};
+    if (minValue !== undefined) { context.min = minValue; }
+    if (maxValue !== undefined) { context.max = maxValue; }
+    var templateExists = context.messageTemplate || ctor.messageTemplates[validatorName];
     if (!templateExists) {
       ctor.messageTemplates[validatorName] = __formatString("'%displayName%' must be an integer between the values of %1 and %2",
           minValue, maxValue);
@@ -5206,9 +5209,9 @@ function setDpValueSimple(context, rawAccessorFn) {
 
       if (fkNames.length === 0) return;
       var npValue = parent.getProperty(np.name);
+      if (!npValue) return;
       var fkName = fkNames[propertyIx];
       if (np.isScalar) {
-        if (!npValue) return;
         npValue.setProperty(fkName, newValue);
       } else {
         npValue.forEach(function (iv) {
@@ -5487,6 +5490,13 @@ var DataType = (function () {
     return (source == null) ? source : source.toString();
   };
 
+  var coerceToGuid = function (source, sourceTypeName) {
+    if (sourceTypeName === "string") {
+      return source.trim().toLowerCase();
+    }
+    return source;
+  };
+
   var coerceToInt = function (source, sourceTypeName) {
     if (sourceTypeName === "string") {
       var src = source.trim();
@@ -5742,6 +5752,7 @@ var DataType = (function () {
   **/
   DataType.Guid = DataType.addSymbol({
   defaultValue: "00000000-0000-0000-0000-000000000000",
+  parse: coerceToGuid,
   fmtOData: fmtGuid,
   getNext: getNextGuid
   });
@@ -5842,11 +5853,18 @@ var DataType = (function () {
     if (typeof source === 'string') {
       // convert to UTC string if no time zone specifier.
       var isLocalTime = _localTimeRegex.test(source);
+      // var isLocalTime = !hasTimeZone(source);
       source = isLocalTime ? source + 'Z' : source;
     }
     source = new Date(Date.parse(source));
     return source;
   };
+
+  //function hasTimeZone(source) {
+  //  var ix = source.indexOf("T");
+  //  var timePart = source.substring(ix+1);
+  //  return  timePart.indexOf("-") >= 0 || timePart.indexOf("+") >= 0 || timePart.indexOf("Z");
+  //}
 
   // NOT YET NEEDED --------------------------------------------------
   // var _utcOffsetMs = (new Date()).getTimezoneOffset() * 60000;
@@ -5876,6 +5894,8 @@ var DataType = (function () {
       }
     } else if (dataType === DataType.Time) {
       val = DataType.parseTimeFromServer(val);
+    } else if (val && dataType === DataType.Guid) {
+      val = val.toLowerCase();
     }
     return val;
   }
@@ -6102,7 +6122,14 @@ var DataService = (function () {
     json.jsonResultsAdapter = __config._fetchObject(JsonResultsAdapter, json.jsonResultsAdapter);
     return new DataService(json);
   };
-  
+
+  /**
+   Returns a url for this dataService with the specified suffix. This method handles dataService names either
+   with or without trailing '/'s.
+   @method qualifyUrl
+   @param suffix {String} The resulting url.
+   @return {a Url string}
+   **/
   proto.qualifyUrl = function (suffix) {
     var url = this.serviceName;
     // remove any trailing "/"
@@ -6285,6 +6312,14 @@ var MetadataStore = (function () {
   proto._$typeName = "MetadataStore";
   Event.bubbleEvent(proto, null);
   ctor.ANONTYPE_PREFIX = "_IB_";
+
+
+  // needs to be made avail to breeze.dataService.xxx files
+  ctor.normalizeTypeName = __memoize(function (rawTypeName) {
+    return rawTypeName && parseTypeName(rawTypeName).typeName;
+  });
+  // for debugging use the line below instead.
+  //ctor.normalizeTypeName = function (rawTypeName) { return parseTypeName(rawTypeName).typeName; };
 
   /**
   An {{#crossLink "Event"}}{{/crossLink}} that fires after a MetadataStore has completed fetching metadata from a remote service.
@@ -6959,7 +6994,7 @@ var CsdlMetadataParser = (function () {
       if (schema.entityContainer) {
         __toArray(schema.entityContainer).forEach(function (container) {
           __toArray(container.entitySet).forEach(function (entitySet) {
-            var entityTypeName = parseTypeName(entitySet.entityType, schema).typeName;
+            var entityTypeName = parseTypeNameWithSchema(entitySet.entityType, schema).typeName;
             metadataStore.setEntityTypeForResourceName(entitySet.name, entityTypeName);
             metadataStore._entityTypeResourceMap[entityTypeName] = entitySet.name;
           });
@@ -7002,7 +7037,7 @@ var CsdlMetadataParser = (function () {
       isAbstract: csdlEntityType.abstract && csdlEntityType.abstract === 'true'
     });
     if (csdlEntityType.baseType) {
-      var baseTypeName = parseTypeName(csdlEntityType.baseType, schema).typeName;
+      var baseTypeName = parseTypeNameWithSchema(csdlEntityType.baseType, schema).typeName;
       entityType.baseTypeName = baseTypeName;
       var baseEntityType = metadataStore._getEntityType(baseTypeName, true);
       if (baseEntityType) {
@@ -7129,7 +7164,7 @@ var CsdlMetadataParser = (function () {
     // Complex properties are never nullable ( per EF specs)
     // var isNullable = csdlProperty.nullable === 'true' || csdlProperty.nullable == null;
     // var complexTypeName = csdlProperty.type.split("Edm.")[1];
-    var complexTypeName = parseTypeName(csdlProperty.type, schema).typeName;
+    var complexTypeName = parseTypeNameWithSchema(csdlProperty.type, schema).typeName;
     // can't set the name until we go thru namingConventions and these need the dp.
     var dp = new DataProperty({
       nameOnServer: csdlProperty.name,
@@ -7147,7 +7182,7 @@ var CsdlMetadataParser = (function () {
     });
 
     var isScalar = toEnd.multiplicity !== "*";
-    var dataType = parseTypeName(toEnd.type, schema).typeName;
+    var dataType = parseTypeNameWithSchema(toEnd.type, schema).typeName;
 
     var constraint = association.referentialConstraint;
     if (!constraint) {
@@ -7274,7 +7309,7 @@ var CsdlMetadataParser = (function () {
   //      -> association
 
   function getAssociation(csdlNavProperty, schema) {
-    var assocName = parseTypeName(csdlNavProperty.relationship, schema).shortTypeName;
+    var assocName = parseTypeNameWithSchema(csdlNavProperty.relationship, schema).shortTypeName;
     var assocs = schema.association;
     if (!assocs) return null;
     if (!Array.isArray(assocs)) {
@@ -7287,46 +7322,15 @@ var CsdlMetadataParser = (function () {
   }
 
   // schema is only needed for navProperty type name
-  function parseTypeName(entityTypeName, schema) {
-    if (!entityTypeName) {
-      return null;
-    }
-
-    if (__stringStartsWith(entityTypeName, MetadataStore.ANONTYPE_PREFIX)) {
-      return {
-        shortTypeName: entityTypeName,
-        namespace: "",
-        typeName: entityTypeName,
-        isAnonymous: true
-      };
-    }
-    var entityTypeNameNoAssembly = entityTypeName.split(",")[0];
-    var nameParts = entityTypeNameNoAssembly.split(".");
-    if (nameParts.length > 1) {
-
-      var shortName = nameParts[nameParts.length - 1];
-
-      var ns = null;
-      if (schema) {
-        ns = getNamespaceFor(shortName, schema);
+  function parseTypeNameWithSchema(entityTypeName, schema) {
+    var result = parseTypeName(entityTypeName);
+    if (schema) {
+      var ns = getNamespaceFor(result.shortTypeName, schema);
+      if (ns) {
+        result = makeTypeHash(result.shortTypeName, ns);
       }
-
-      if (!ns) {
-        var namespaceParts = nameParts.slice(0, nameParts.length - 1);
-        ns = namespaceParts.join(".");
-      }
-      return {
-        shortTypeName: shortName,
-        namespace: ns,
-        typeName: qualifyTypeName(shortName, ns)
-      };
-    } else {
-      return {
-        shortTypeName: entityTypeName,
-        namespace: "",
-        typeName: entityTypeName
-      };
     }
+    return result;
   }
 
   function getNamespaceFor(shortName, schema) {
@@ -7345,16 +7349,8 @@ var CsdlMetadataParser = (function () {
     return null;
   }
 
-  var normalizeTypeName = __memoize(function (rawTypeName) {
-    return rawTypeName && parseTypeName(rawTypeName).typeName;
-  });
-
-  // for debugging use the line below instead.
-  //ctor.normalizeTypeName = function (rawTypeName) { return parseTypeName(rawTypeName).typeName; };
-
   return {
-    parse: parse,
-    normalizeTypeName: normalizeTypeName
+    parse: parse
   };
 
 })();
@@ -7697,6 +7693,13 @@ var EntityType = (function () {
     if (ms && !(property.name && property.nameOnServer)) {
       updateClientServerNames(ms.namingConvention, property, "name");
     }
+    // props can be added after entity prototype has already been wrapped.
+    if (ms && this._extra) {
+      if (this._extra.alreadyWrappedProps) {
+        var proto = this._ctor.prototype;
+        __modelLibraryDef.getDefaultInstance().initializeEntityPrototype(proto);
+      }
+    }
     return this;
   };
 
@@ -7853,7 +7856,6 @@ var EntityType = (function () {
     // defaultPropertyInterceptor is a 'global' (but internal to breeze) function;
     instanceProto._$interceptor = interceptor || defaultPropertyInterceptor;
     __modelLibraryDef.getDefaultInstance().initializeEntityPrototype(instanceProto);
-
     this._ctor = aCtor;
   };
 
@@ -8033,32 +8035,47 @@ var EntityType = (function () {
         if (dp.isScalar) {
           dataType._updateTargetFromRaw(oldVal, rawVal, rawValueFn);
         } else {
-          // clear the old array and push new complex objects into it.
-          oldVal.length = 0;
           if (Array.isArray(rawVal)) {
-            rawVal.forEach(function (rawCo) {
+            var newVal = rawVal.map(function (rawCo) {
               var newCo = dataType._createInstanceCore(target, dp);
               dataType._updateTargetFromRaw(newCo, rawCo, rawValueFn);
               dataType._initializeInstance(newCo);
-              oldVal.push(newCo);
+              return newCo;
             });
+            if (!__arrayEquals(oldVal, newVal, coEquals)) {
+              // clear the old array and push new objects into it.
+              oldVal.length = 0;
+              newVal.forEach(function (nv) {
+                oldVal.push(nv);
+              });
+            }
+          } else {
+            oldVal.length = 0;
           }
         }
       } else {
         var val;
         if (dp.isScalar) {
-          val = parseRawValue(rawVal, dataType);
-          target.setProperty(dp.name, val);
+          var newVal = parseRawValue(rawVal, dataType);
+          target.setProperty(dp.name, newVal);
         } else {
           oldVal = target.getProperty(dp.name);
-          // clear the old array and push new complex objects into it.
-          oldVal.length = 0;
           if (Array.isArray(rawVal)) {
-            rawVal.forEach(function (rv) {
-              val = parseRawValue(rv, dataType);
-              oldVal.push(val);
+            // need to compare values
+            var newVal = rawVal.map(function (rv) {
+              return parseRawValue(rv, dataType);
             });
+            if (!__arrayEquals(oldVal, newVal)) {
+              // clear the old array and push new objects into it.
+              oldVal.length = 0;
+              newVal.forEach(function (nv) {
+                oldVal.push(nv);
+              });
+            }
+          } else {
+            oldVal.length = 0;
           }
+
         }
       }
     });
@@ -8074,6 +8091,22 @@ var EntityType = (function () {
         targetAspect.extraMetadata = rawAspect.extraMetadata;
       }
     }
+  }
+
+  function coEquals(co1, co2) {
+    var dataProps = co1.complexAspect.parentProperty.dataType.dataProperties;
+    var areEqual = dataProps.every(function (dp) {
+      if (!dp.isSettable) return true;
+      var v1 = co1.getProperty(dp.name);
+      var v2 = co2.getProperty(dp.name);
+      if (dp.isComplexProperty) {
+        return coEquals(v1, v2);
+      } else {
+        var dataType = dp.dataType; // this will be a complexType when dp is a complexProperty
+        return (v1 === v2 || (dataType && dataType.isDate && v1 && v2 && v1.valueOf() === v2.valueOf()));
+      }
+    });
+    return areEqual;
   }
 
   /**
@@ -9270,12 +9303,51 @@ var AutoGeneratedKeyType = (function () {
 
 // functions shared between classes related to Metadata
 
+function parseTypeName(entityTypeName) {
+  if (!entityTypeName) {
+    return null;
+  }
+
+  var typeParts = entityTypeName.split(":#");
+  if (typeParts.length > 1) {
+    return makeTypeHash(typeParts[0], typeParts[1]);
+  }
+
+  if (__stringStartsWith(entityTypeName, MetadataStore.ANONTYPE_PREFIX)) {
+    var typeHash = makeTypeHash(entityTypeName);
+    typeHash.isAnonymous = true
+    return typeHash;
+  }
+  var entityTypeNameNoAssembly = entityTypeName.split(",")[0];
+  var typeParts = entityTypeNameNoAssembly.split(".");
+  if (typeParts.length > 1) {
+    var shortName = typeParts[typeParts.length - 1];
+    var namespaceParts = typeParts.slice(0, typeParts.length - 1);
+    var ns = namespaceParts.join(".");
+    return makeTypeHash(shortName, ns);
+  } else {
+    return makeTypeHash(entityTypeName);
+  }
+}
+
+function makeTypeHash(shortName, namespace) {
+  return {
+    shortTypeName: shortName,
+    namespace: namespace,
+    typeName: qualifyTypeName(shortName, namespace)
+  };
+}
+
 function isQualifiedTypeName(entityTypeName) {
   return entityTypeName.indexOf(":#") >= 0;
 }
 
 function qualifyTypeName(shortName, namespace) {
-  return shortName + ":#" + namespace;
+  if (namespace && namespace.length > 0) {
+    return shortName + ":#" + namespace;
+  } else {
+    return shortName;
+  }
 }
 
 // Used by both ComplexType and EntityType
@@ -9305,8 +9377,6 @@ breeze.DataProperty = DataProperty;
 breeze.NavigationProperty = NavigationProperty;
 breeze.AutoGeneratedKeyType = AutoGeneratedKeyType;
 
-// needs to be made avail to breeze.dataService.xxx files and we don't want to expose CsdlMetadataParser just for this.
-MetadataStore.normalizeTypeName = CsdlMetadataParser.normalizeTypeName;
 
 
 ;/**
@@ -9682,8 +9752,7 @@ breeze.NamingConvention = NamingConvention;
     In most cases this works well, but you can also force the interpretation by making the value argument itself an object with a 'value'
     property and an 'isLiteral' property set to either true or false.  Breeze also tries to infer the dataType of any
     literal based on context, if this fails you can force this inference by making the value argument an object with a
-    'value' property and a 'dataType'property set to one of the breeze.DataType enumeration instances.
-
+    'value' property and a 'dataType' property set to one of the breeze.DataType enumeration instances.
     **/
 
     var ctor = function () {
@@ -9736,8 +9805,8 @@ breeze.NamingConvention = NamingConvention;
     In most cases this works well, but you can also force the interpretation by making the value argument itself an object with a 'value'
     property and an 'isLiteral' property set to either true or false.  Breeze also tries to infer the dataType of any
     literal based on context, if this fails you can force this inference by making the value argument an object with a
-    'value' property and a 'dataType'property set to one of the breeze.DataType enumeration instances.
-    @param predicates* {multiple Predicates|Array of Predicate} Any null or undefined values passed in will be automatically filtered out before constructing the composite predicate.
+    'value' property and a 'dataType' property set to one of the breeze.DataType enumeration instances.
+
     @static
     **/
     ctor.create = ctor;
@@ -9845,8 +9914,7 @@ breeze.NamingConvention = NamingConvention;
     @param predicates* {multiple Predicates|Array of Predicate} Any null or undefined values passed in will be automatically filtered out before constructing the composite predicate.
     **/
     proto.and = function () {
-      var pred = Predicate(__arraySlice(arguments));
-      return new AndOrPredicate("and", [this, pred]);
+      return new AndOrPredicate("and", argsForAndOrPredicates(this, arguments));
     };
     
     /**
@@ -9869,8 +9937,7 @@ breeze.NamingConvention = NamingConvention;
     @param predicates* {multiple Predicates|Array of Predicate} Any null or undefined values passed in will be automatically filtered out before constructing the composite predicate.
     **/
     proto.or = function () {
-      var pred = Predicate(__arraySlice(arguments));
-      return new AndOrPredicate("or", [this, pred]);
+      return new AndOrPredicate("or", argsForAndOrPredicates(this, arguments));
     };
     
     /**
@@ -9951,6 +10018,16 @@ breeze.NamingConvention = NamingConvention;
       }
     };
 
+    function argsForAndOrPredicates(obj, args) {
+      var preds = args[0];
+      if (preds instanceof Predicate) {
+        preds = __arraySlice(args);
+      } else if (!Array.isArray(preds)) {
+        preds = [Predicate(__arraySlice(args))];
+      }
+      return [obj].concat(preds);
+    }
+    
     function updateAliasMap(aliasMap, op, config) {
       var key = op.toLowerCase();
       config.key = key;
@@ -10097,22 +10174,22 @@ breeze.NamingConvention = NamingConvention;
     var proto = ctor.prototype = new Predicate();
     proto._initialize('binaryPredicate', {
       'eq': {
-        aliases: ["=="]
+        aliases: ["==", "equals" ]
       },
       'ne': {
-        aliases: ["!=", '~=']
+        aliases: ["!=", "~=", "notequals" ]
       },
       'lt': {
-        aliases: ["<" ]
+        aliases: ["<", "lessthan" ]
       },
       'le': {
-        aliases: ["<=" ]
+        aliases: ["<=", "lessthanorequal" ]
       },
       'gt': {
-        aliases: [">"]
+        aliases: [">", "greaterthan"]
       },
       'ge': {
-        aliases: [">=" ]
+        aliases: [">=", "greaterthanorequal" ]
       },
       'startswith': {
         isFunction: true
@@ -10454,7 +10531,8 @@ breeze.NamingConvention = NamingConvention;
     }
 
     if (!__isString(source)) {
-      if (source != null && __isObject(source) && (!__isDate(source))) {
+      if (source != null && __isObject(source) && !source.toISOString) { 
+        // source is an object but not a Date-like thing such as a JS or MomentJS Date
         if (source.value === undefined) {
           throw new Error("Unable to resolve an expression for: " + source + " on entityType: " + entityType.name);
         }
@@ -11617,8 +11695,12 @@ breeze.Predicate = Predicate;
   }
   
   /**
-  Static method tht creates an EntityQuery that will allow 'requerying' an entity or a collection of entities by primary key. This can be useful
+  Static method that creates an EntityQuery that will allow 'requerying' an entity or a collection of entities by primary key. This can be useful
   to force a requery of selected entities, or to restrict an existing collection of entities according to some filter.
+
+  Works for a single entity or an array of entities of the SAME type.
+  Does not work for an array of entities of different types.
+
   @example
       // assuming 'customers' is an array of 'Customer' entities retrieved earlier.
       var customersQuery = EntityQuery.fromEntities(customers);
@@ -11644,7 +11726,14 @@ breeze.Predicate = Predicate;
       entities = __arraySlice(arguments);
     }
     var firstEntity = entities[0];
-    var q = new EntityQuery(firstEntity.entityType.defaultResourceName);
+    var type = firstEntity.entityType;
+    if (entities.some(function(e){
+      return e.entityType !== type;
+    })) {
+      throw new Error("All 'fromEntities' must be the same type; at least one is not of type " +
+        type.name);
+    }
+    var q = new EntityQuery(type.defaultResourceName);
     var preds = entities.map(function (entity) {
       return buildPredicate(entity);
     });
@@ -11971,26 +12060,7 @@ var FilterQueryOp = (function () {
   aEnum.IsTypeOf = aEnum.addSymbol({ operator: "isof" });
   
   aEnum.resolveSymbols();
-  aEnum._map = function () {
-    var map = {};
-    aEnum.getSymbols().forEach(function (s) {
-      map[s.name.toLowerCase()] = s;
-      map[s.operator.toLowerCase()] = s;
-      if (s.aliases) {
-        s.aliases.forEach(function (alias) {
-          map[alias.toLowerCase()] = s;
-        });
-      }
-    });
-    return map;
-  }();
-  aEnum.from = function (op) {
-    if (aEnum.contains(op)) {
-      return op;
-    } else {
-      return aEnum._map[op.toLowerCase()];
-    }
-  };
+
   return aEnum;
 })();
 
@@ -12001,26 +12071,7 @@ var BooleanQueryOp = (function () {
   aEnum.Not = aEnum.addSymbol({ operator: "not" });
   
   aEnum.resolveSymbols();
-  aEnum._map = (function () {
-    var map = {};
-    aEnum.getSymbols().forEach(function (s) {
-      map[s.name.toLowerCase()] = s;
-      map[s.operator.toLowerCase()] = s;
-      if (s.aliases) {
-        s.aliases.forEach(function (alias) {
-          map[alias.toLowerCase()] = s;
-        });
-      }
-    });
-    return map;
-  })();
-  aEnum.from = function (op) {
-    if (aEnum.contains(op)) {
-      return op;
-    } else {
-      return aEnum._map[op.toLowerCase()];
-    }
-  };
+
   return aEnum;
 })();
 
@@ -12476,8 +12527,6 @@ breeze.MergeStrategy = MergeStrategy;
 
 var EntityGroup = (function () {
 
-  var __changedFilter = getFilter([EntityState.Added, EntityState.Modified, EntityState.Deleted]);
-
   var ctor = function EntityGroup(entityManager, entityType) {
     this.entityManager = entityManager;
     this.entityType = entityType;
@@ -12562,7 +12611,28 @@ var EntityGroup = (function () {
   };
 
   proto.hasChanges = function () {
-    return this._entities.some(__changedFilter);
+    var entities = this._entities;
+    var unchanged = EntityState.Unchanged;
+    for (var i = 0, len = entities.length; i < len; i++){
+      var e = entities[i];
+      if (e && e.entityAspect.entityState !== unchanged){
+        return true;
+      }
+    }
+    return false;
+  };
+
+  proto.getChanges = function () {
+    var entities = this._entities;
+    var unchanged = EntityState.Unchanged;
+    var changes = [];
+    for (var i = 0, len = entities.length; i < len; i++){
+      var e = entities[i];
+      if (e && e.entityAspect.entityState !== unchanged){
+        changes.push(e);
+      }
+    }
+    return changes;
   };
 
   proto.getEntities = function (entityStates) {
@@ -12632,15 +12702,11 @@ var EntityGroup = (function () {
     } else if (entityStates.length === 1) {
       var entityState = entityStates[0];
       return function (e) {
-        if (!e) return false;
-        return e.entityAspect.entityState === entityState;
+        return !!e && e.entityAspect.entityState === entityState;
       };
     } else {
       return function (e) {
-        if (!e) return false;
-        return entityStates.some(function (es) {
-          return e.entityAspect.entityState === es;
-        });
+        return !!e && -1 !== entityStates.indexOf(e.entityAspect.entityState);
       };
     }
   }
@@ -12673,28 +12739,28 @@ var EntityManager = (function () {
   @example
       var metadataStore = new MetadataStore();
       var entityManager = new EntityManager( {
-          serviceName: "breeze/NorthwindIBModel", 
-          metadataStore: metadataStore 
+          serviceName: "breeze/NorthwindIBModel",
+          metadataStore: metadataStore
       });
   or
   @example
       return new QueryOptions({
-          mergeStrategy: obj, 
-          fetchStrategy: this.fetchStrategy 
+          mergeStrategy: obj,
+          fetchStrategy: this.fetchStrategy
       });
       var queryOptions = new QueryOptions({
-          mergeStrategy: MergeStrategy.OverwriteChanges, 
-          fetchStrategy: FetchStrategy.FromServer 
+          mergeStrategy: MergeStrategy.OverwriteChanges,
+          fetchStrategy: FetchStrategy.FromServer
       });
       var validationOptions = new ValidationOptions({
-          validateOnAttach: true, 
-          validateOnSave: true, 
+          validateOnAttach: true,
+          validateOnSave: true,
           validateOnQuery: false
       });
       var entityManager = new EntityManager({
-          serviceName: "breeze/NorthwindIBModel", 
-          queryOptions: queryOptions, 
-          validationOptions: validationOptions 
+          serviceName: "breeze/NorthwindIBModel",
+          queryOptions: queryOptions,
+          validationOptions: validationOptions
       });
   @method <ctor> EntityManager
   @param [config] {Object|String} Configuration settings or a service name.
@@ -12846,7 +12912,7 @@ var EntityManager = (function () {
   @example
       var em = new EntityManager( {serviceName: "breeze/NorthwindIBModel" });
       em.entityChanged.subscribe(function(changeArgs) {
-          // This code will be executed any time any entity within the entityManager is added, modified, deleted or detached for any reason. 
+          // This code will be executed any time any entity within the entityManager is added, modified, deleted or detached for any reason.
           var action = changeArgs.entityAction;
           var entity = changeArgs.entity;
           // .. do something to this entity when it is changed.
@@ -12865,9 +12931,9 @@ var EntityManager = (function () {
   @example
       var em = new EntityManager( {serviceName: "breeze/NorthwindIBModel" });
       em.validationErrorsChanged.subscribe(function(changeArgs) {
-              // This code will be executed any time any entity within the entityManager experiences a change to its validationErrors collection. 
+              // This code will be executed any time any entity within the entityManager experiences a change to its validationErrors collection.
               function (validationChangeArgs) {
-                  var entity == validationChangeArgs.entity; 
+                  var entity == validationChangeArgs.entity;
                   var errorsAdded = validationChangeArgs.added;
                   var errorsCleared = validationChangeArgs.removed;
                   // ... do something interesting with the order.
@@ -12970,42 +13036,92 @@ var EntityManager = (function () {
   };
 
   /**
-  Exports an entire EntityManager or just selected entities into a serialized string for external storage.
+  Exports selected entities, all entities of selected types, or an entire EntityManager cache.
   @example
-  This method can be used to take a snapshot of an EntityManager that can be either stored offline or held
-  memory.  This snapshot can be restored or merged into an another EntityManager at some later date.
+  This method takes a snapshot of an EntityManager that can be stored offline or held in memory.
+  Use the `EntityManager.importEntities` method to restore or merge the snapshot
+  into another EntityManager at some later time.
   @example
-      // assume em1 is an EntityManager containing a number of existing entities.
+      // let em1 be an EntityManager containing a number of existing entities.
+      // export every entity in em1.
       var bundle = em1.exportEntities();
-      // can be stored via the web storage api
+      // save to the browser's local storage
       window.localStorage.setItem("myEntityManager", bundle);
-      // assume the code below occurs in a different session.
+      // later retrieve the export
       var bundleFromStorage = window.localStorage.getItem("myEntityManager");
-      var em2 = new EntityManager({
-              serviceName: em1.serviceName, 
-              metadataStore: em1.metadataStore 
-          });
+      // import the retrieved export bundle into another manager
+      var em2 = em1.createEmptyCopy();
       em2.importEntities(bundleFromStorage);
-      // em2 will now have a complete copy of what was in em1
+      // em2 now has a complete, faithful copy of the entities that were in em1
   You can also control exactly which entities are exported.
   @example
-      // assume entitiesToExport is an array of entities to export.
-      var bundle = em1.exportEntities(entitiesToExport);
-      // assume em2 is another entityManager containing some of the same entities possibly with modifications.
+      // get em1's unsaved changes (an array) and export them.
+      var changes = em1.getChanges();
+      var bundle = em1.exportEntities(changes);
+      // merge these entities into em2 which may contains some of the same entities.
+      // do NOT overwrite the entities in em2 if they themselves have unsaved changes.
       em2.importEntities(bundle, { mergeStrategy: MergeStrategy.PreserveChanges} );
+  Metadata are included in an export by default. You may want to exclude the metadata
+  especially if you're exporting just a few entities for local storage.
+  @example
+      var bundle = em1.exportEntities(arrayOfSelectedEntities, {includeMetadata: false});
+      window.localStorage.setItem("goodStuff", bundle);
+  You may still express this option as a boolean value although this older syntax is deprecated.
+  @example
+      // Exclude the metadata (deprecated syntax)
+      var bundle = em1.exportEntities(arrayOfSelectedEntities, false);
+  You can export all entities of one or more specified EntityTypes.
+  @example
+      // Export all Customer and Employee entities (and also exclude metadata)
+      var bundle = em1.exportEntities(['Customer', 'Employee'], {includeMetadata: false});
+  All of the above examples return an export bundle as a string which is the default format.
+  You can export the bundle as JSON if you prefer by setting the `asString` option to false.
+  @example
+      // Export all Customer and Employee entities as JSON and exclude the metadata
+      var bundle = em1.exportEntities(['Customer', 'Employee'],
+                                      {asString: false, includeMetadata: false});
+      // store JSON bundle somewhere ... perhaps indexDb ... and later import as we do here.
+      em2.importEntities(bundle);
   @method exportEntities
-  @param [entities] {Array of entities} The entities to export; all entities are exported if this is omitted or null
-  @param [includeMetadata = true] {Boolean} Whether to include metadata in the export; the default is true
-  @return {String} A serialized version of the exported data.
+  @param [entities] {Array of Entity | Array of EntityType | Array of String}
+    The entities to export or the EntityType(s) of the entities to export;
+    all entities are exported if this parameter is omitted or null.
+  @param [config] {Object | Boolean} Export configuration options
+  @param [config.asString=true] {Boolean} If true (default), return export bundle as a string.
+  @param [config.includeMetadata=true] {Boolean} If true (default), include metadata in the export bundle.
+  @return {String | Object} The export bundle either serialized (default) or as a JSON object.
+  The bundle contains the metadata (unless excluded) and the entity data grouped by type.
+  The entity data include property values, change-state, and temporary key mappings (if any).
+
+  The export bundle is an undocumented, Breeze-internal representation of entity data
+  suitable for export, storage, and import. The schema and contents of the bundle may change in future versions of Breeze.
+  Manipulate it at your own risk with appropriate caution.
   **/
-  proto.exportEntities = function (entities, includeMetadata) {
-    assertParam(includeMetadata, "includeMetadata").isBoolean().isOptional().check();
-    includeMetadata = (includeMetadata == null) ? true : includeMetadata;
+  proto.exportEntities = function (entities, config) {
+    assertParam(entities, "entities").isArray().isEntity()
+    .or().isNonEmptyArray().isInstanceOf(EntityType)
+    .or().isNonEmptyArray().isString()
+    .or().isOptional().check();
+
+    assertParam(config, "config").isObject()
+    .or().isBoolean()
+    .or().isOptional().check();
+
+    if (config == null) {
+      config = { includeMetadata: true, asString: true };
+    } else if (typeof config === 'boolean') { // deprecated
+      config = { includeMetadata: config, asString: true };
+    }
+
+    assertConfig(config)
+        .whereParam("asString").isBoolean().isOptional().withDefault(true)
+        .whereParam("includeMetadata").isBoolean().isOptional().withDefault(true)
+        .applyAll(config);
 
     var exportBundle = exportEntityGroups(this, entities);
     var json = __extend({}, exportBundle, ["tempKeys", "entityGroupMap"]);
 
-    if (includeMetadata) {
+    if (config.includeMetadata) {
       json = __extend(json, this, ["dataService", "saveOptions", "queryOptions", "validationOptions"]);
       json.metadataStore = this.metadataStore.exportMetadata();
     } else {
@@ -13013,7 +13129,7 @@ var EntityManager = (function () {
       json.metadataStoreName = this.metadataStore.name;
     }
 
-    var result = JSON.stringify(json, null, __config.stringifyPad);
+    var result = config.asString ? JSON.stringify(json, null, __config.stringifyPad) : json;
     return result;
   };
 
@@ -13028,8 +13144,8 @@ var EntityManager = (function () {
       var bundle = em1.exportEntities();
       // bundle can be stored in window.localStorage or just held in memory.
       var em2 = new EntityManager({
-          serviceName: em1.serviceName, 
-          metadataStore: em1.metadataStore 
+          serviceName: em1.serviceName,
+          metadataStore: em1.metadataStore
       });
       em2.importEntities(bundle);
       // em2 will now have a complete copy of what was in em1
@@ -13101,7 +13217,9 @@ var EntityManager = (function () {
         Array.prototype.push.apply(entitiesToLink, entities);
       });
       entitiesToLink.forEach(function (entity) {
-        that._linkRelatedEntities(entity);
+        if (!entity.entityAspect.entityState.isDeleted()) {
+          that._linkRelatedEntities(entity);
+        }
       });
     });
     return {
@@ -13295,7 +13413,7 @@ var EntityManager = (function () {
 
   failureFunction([error])
   @param [errorCallback.error] {Error} Any error that occured wrapped into an Error object.
-  @return {Promise} 
+  @return {Promise}
     - Properties on the promise success result
       - schema {Object} The raw Schema object from metadata provider - Because this schema will differ depending on the metadata provider
         it is usually better to access metadata via the 'metadataStore' property of the EntityManager instead of using this 'raw' data.
@@ -13333,7 +13451,7 @@ var EntityManager = (function () {
   @example
       var em = new EntityManager(serviceName);
       var query = new EntityQuery("Orders");
-      em.executeQuery(query, 
+      em.executeQuery(query,
           function(data) {
               var orders = data.results;
               ... query results processed here
@@ -13377,7 +13495,7 @@ var EntityManager = (function () {
   @param [errorCallback.error.httpResponse] {HttpResponse} The HttpResponse returned from the server.
 
 
-  @return {Promise} 
+  @return {Promise}
     - Properties on the promise success result
       - results {Array of Entity}
       - query {EntityQuery} The original query
@@ -13419,7 +13537,7 @@ var EntityManager = (function () {
       var em = new EntityManager(serviceName);
       var query = new EntityQuery("Orders");
       var orders = em.executeQueryLocally(query);
-   
+
   Note that this can also be accomplished using the 'executeQuery' method with
   a FetchStrategy of FromLocalCache and making use of the Promise or callback
   @example
@@ -13436,16 +13554,20 @@ var EntityManager = (function () {
   @return  {Array of Entity}  Array of entities from cache that satisfy the query
   **/
   proto.executeQueryLocally = function (query) {
+    return executeQueryLocallyCore(this, query).results;
+  }
+
+  function executeQueryLocallyCore(em, query) {
     assertParam(query, "query").isInstanceOf(EntityQuery).check();
 
-    var metadataStore = this.metadataStore;
+    var metadataStore = em.metadataStore;
     var entityType = query._getFromEntityType(metadataStore, true);
     // there may be multiple groups is this is a base entity type.
-    var groups = findOrCreateEntityGroups(this, entityType);
+    var groups = findOrCreateEntityGroups(em, entityType);
     // filter then order then skip then take
     var filterFunc = query.wherePredicate && query.wherePredicate.toFunction({ entityType: entityType});
 
-    var queryOptions = QueryOptions.resolve([ query.queryOptions, this.queryOptions, QueryOptions.defaultInstance]);
+    var queryOptions = QueryOptions.resolve([ query.queryOptions, em.queryOptions, QueryOptions.defaultInstance]);
     var includeDeleted = queryOptions.includeDeleted === true;
 
     var newFilterFunc = function (entity) {
@@ -13462,6 +13584,11 @@ var EntityManager = (function () {
     if (orderByComparer) {
       result.sort(orderByComparer);
     }
+
+    if (query.inlineCountEnabled) {
+      var inlineCount = result.length;
+    }
+
     var skipCount = query.skipCount;
     if (skipCount) {
       result = result.slice(skipCount);
@@ -13476,7 +13603,7 @@ var EntityManager = (function () {
       var selectFn = selectClause.toFunction();
       result = result.map(selectFn);
     }
-    return result;
+    return {results: result, inlineCount: inlineCount};
   };
 
   /**
@@ -13575,18 +13702,10 @@ var EntityManager = (function () {
 
     clearServerErrors(entitiesToSave);
 
-    if (this.validationOptions.validateOnSave) {
-      var failedEntities = entitiesToSave.filter(function (entity) {
-        var aspect = entity.entityAspect;
-        var isValid = aspect.entityState.isDeleted() || aspect.validateEntity();
-        return !isValid;
-      });
-      if (failedEntities.length > 0) {
-        var valError = new Error("Client side validation errors encountered - see the entityErrors collection on this object for more detail");
-        valError.entityErrors = createEntityErrors(failedEntities);
-        if (errorCallback) errorCallback(valError);
-        return Q.reject(valError);
-      }
+    var valError = this.saveChangesValidateOnClient(entitiesToSave);
+    if (valError) {
+      if (errorCallback) errorCallback(valError);
+      return Q.reject(valError);
     }
 
     var dataService = DataService.resolve([saveOptions.dataService, this.dataService]);
@@ -13667,6 +13786,37 @@ var EntityManager = (function () {
       return Q.reject(error);
     }
   };
+
+  /**
+  Run the "saveChanges" pre-save client validation logic.
+
+  This is NOT a general purpose validation method.
+  It is intended for utilities that must know if saveChanges
+  would reject the save due to client validation errors.
+
+  It only validates entities if the EntityManager's
+  {{#crossLink "ValidationOptions"}}{{/crossLink}}.validateOnSave is true.
+
+  @method saveChangesValidateOnClient
+  @param entitiesToSave {Array of Entity} The list of entities to save (to validate).
+  @return {Error} Validation error or null if no error
+  **/
+  proto.saveChangesValidateOnClient = function(entitiesToSave) {
+
+    if (this.validationOptions.validateOnSave) {
+      var failedEntities = entitiesToSave.filter(function (entity) {
+        var aspect = entity.entityAspect;
+        var isValid = aspect.entityState.isDeleted() || aspect.validateEntity();
+        return !isValid;
+      });
+      if (failedEntities.length > 0) {
+        var valError = new Error("Client side validation errors encountered - see the entityErrors collection on this object for more detail");
+        valError.entityErrors = createEntityErrors(failedEntities);
+        return valError;
+      }
+    }
+    return null;
+  }
 
   function clearServerErrors(entities) {
     entities.forEach(function (entity) {
@@ -13805,12 +13955,12 @@ var EntityManager = (function () {
   @param typeName {EntityType | String} The EntityType or EntityType name for this key.
   @param keyValues {Object|Array of Object} The values for this key - will usually just be a single value; an array is only needed for multipart keys.
   @param checkLocalCacheFirst {Boolean=false} Whether to check this EntityManager first before going to the server. By default, the query will NOT do this.
-  @return {Promise} 
+  @return {Promise}
     - Properties on the promise success result
       - entity {Object} The entity returned or null
       - entityKey {EntityKey} The entityKey of the entity to fetch.
       - fromCache {Boolean} Whether this entity was fetched from the server or was found in the local cache.
-   
+
   **/
 
   /**
@@ -13829,7 +13979,7 @@ var EntityManager = (function () {
   @async
   @param entityKey {EntityKey} The  {{#crossLink "EntityKey"}}{{/crossLink}} of the Entity to be located.
   @param checkLocalCacheFirst {Boolean=false} Whether to check this EntityManager first before going to the server. By default, the query will NOT do this.
-  @return {Promise} 
+  @return {Promise}
     - Properties on the promise success result
       - entity {Object} The entity returned or null
       - entityKey {EntityKey} The entityKey of the entity to fetch.
@@ -13899,13 +14049,13 @@ var EntityManager = (function () {
   need to be automatically replaced with 'real' key values once these entities are saved.
 
   The EntityManager.keyGeneratorCtor property is used internally by this method to actually generate
-  the keys - See the  {{#crossLink "~keyGenerator-interface"}}{{/crossLink}} interface description to see
+  the keys - See the  {{#crossLink "_keyGenerator_interface"}}{{/crossLink}} interface description to see
   how a custom key generator can be plugged in.
   @example
       // assume em1 is an EntityManager containing a number of preexisting entities.
       var custType = em1.metadataStore.getEntityType("Customer");
-      var custumer = custType.createEntity();
-      var customerId = em.generateTempKeyValue(custumer);
+      var customer = custType.createEntity();
+      var customerId = em.generateTempKeyValue(customer);
       // The 'customer' entity 'CustomerID' property is now set to a newly generated unique id value
       // This property will change again after a successful save of the 'customer' entity.
 
@@ -13913,8 +14063,8 @@ var EntityManager = (function () {
           var sameCust1 = data.results[0];
           // cust1 === sameCust1;
           // but cust1.getProperty("CustomerId") != customerId
-          // because the server will have generated a new id 
-          // and the client will have been updated with this 
+          // because the server will have generated a new id
+          // and the client will have been updated with this
           // new id.
       })
 
@@ -13991,7 +14141,7 @@ var EntityManager = (function () {
     entityTypes = checkEntityTypes(this, entityTypes);
     var entityGroups = getEntityGroups(this, entityTypes);
     return entityGroups.some(function (eg) {
-      return eg.hasChanges();
+      return eg && eg.hasChanges();
     });
   };
 
@@ -14021,8 +14171,7 @@ var EntityManager = (function () {
   **/
   proto.getChanges = function (entityTypes) {
     entityTypes = checkEntityTypes(this, entityTypes);
-    var entityStates = [EntityState.Added, EntityState.Modified, EntityState.Deleted];
-    return getEntitiesCore(this, entityTypes, entityStates);
+    return getChangesCore(this, entityTypes);
   };
 
   /**
@@ -14038,8 +14187,7 @@ var EntityManager = (function () {
   **/
   proto.rejectChanges = function () {
     if (!this._hasChanges) return [];
-    var entityStates = [EntityState.Added, EntityState.Modified, EntityState.Deleted];
-    var changes = getEntitiesCore(this, null, entityStates);
+    var changes = getChangesCore(this, null);
     // next line stops individual reject changes from each calling _hasChangesCore
     var aspects = changes.map(function(e) {
       return e.entityAspect._checkOperation("rejectChanges");
@@ -14170,26 +14318,22 @@ var EntityManager = (function () {
             }
           } else {
             // unidirectional
-            if (np.parentType === entity.entityType) {
-
-              parentToChildNp = np;
-              if (parentToChildNp.isScalar) {
-                // 1 -> 1 eg parent: Order child: InternationalOrder
-                entity.setProperty(parentToChildNp.name, unattachedChildren[0]);
-              } else {
-                // 1 -> n  eg: parent: Region child: Terr
-                var currentChildren = entity.getProperty(parentToChildNp.name);
-                unattachedChildren.forEach(function (child) {
-                  // we know if can't already be there.
-                  currentChildren._push(child);
-                });
-              }
-            } else {
-              // n -> 1  eg: parent: child: OrderDetail parent: Product
+            // if (np.isScalar || np.parentType !== entity.entityType) {
+            if (np.isScalar) {
+              // n -> 1  eg: child: OrderDetail parent: Product
+              // 1 -> 1 eg child: Employee parent: Employee ( only Manager, no DirectReports property)
               childToParentNp = np;
-
               unattachedChildren.forEach(function (child) {
                 child.setProperty(childToParentNp.name, entity);
+              });
+            } else {
+              // 1 -> n  eg: parent: Region child: Terr
+              // TODO: need to remove unattached children from the map after this; only a perf issue.
+              parentToChildNp = np;
+              var currentChildren = entity.getProperty(parentToChildNp.name);
+              unattachedChildren.forEach(function (child) {
+                // we know if can't already be there.
+                currentChildren._push(child);
               });
             }
           }
@@ -14269,6 +14413,24 @@ var EntityManager = (function () {
     return entityTypes;
   }
 
+  function getChangesCore(em, entityTypes) {
+    var entityGroups = getEntityGroups(em, entityTypes);
+
+    // TODO: think about writing a core.mapMany method if we see more of these.
+    var selected;
+    entityGroups.forEach(function (eg) {
+      // eg may be undefined or null
+      if (!eg) return;
+      var entities = eg.getChanges();
+      if (selected) {
+        selected.push.apply(selected, entities);
+      } else {
+        selected = entities;
+      }
+    });
+    return selected || [];
+  }
+
   function getEntitiesCore(em, entityTypes, entityStates) {
     var entityGroups = getEntityGroups(em, entityTypes);
 
@@ -14308,20 +14470,36 @@ var EntityManager = (function () {
 
   function exportEntityGroups(em, entities) {
     var entityGroupMap;
-    if (entities) {
+    var first = entities && entities[0];
+    if (first) {
       // group entities by entityType and
       // create 'groups' that look like entityGroups.
       entityGroupMap = {};
-      entities.forEach(function (e) {
-        var group = entityGroupMap[e.entityType.name];
-        if (!group) {
-          group = {};
-          group.entityType = e.entityType;
-          group._entities = [];
-          entityGroupMap[e.entityType.name] = group;
-        }
-        group._entities.push(e);
-      });
+      if (first.entityType) {
+        // assume "entities" is an array of entities;
+        entities.forEach(function (e) {
+          if (e.entityAspect.entityState == EntityState.Detached) {
+            throw new Error("Unable to export an entity with an EntityState of 'Detached'");
+          }
+          var group = entityGroupMap[e.entityType.name];
+          if (!group) {
+            group = {};
+            group.entityType = e.entityType;
+            group._entities = [];
+            entityGroupMap[e.entityType.name] = group;
+          }
+          group._entities.push(e);
+        });
+      } else {
+        // assume "entities" is an array of EntityTypes (or names)
+        var entityTypes = checkEntityTypes(em, entities)
+        entityTypes.forEach(function(et){
+          var group = em._entityGroupMap[et.name];
+          if (group && group._entities.length) {
+            entityGroupMap[et.name] = group;
+          }
+        })
+      }
     } else {
       entityGroupMap = em._entityGroupMap;
     }
@@ -14439,6 +14617,9 @@ var EntityManager = (function () {
 
       var entityKey = entityType.getEntityKeyFromRawEntity(rawEntity, rawValueFn);
       var entityState = EntityState.fromName(newAspect.entityState);
+      if (!entityState || entityState == EntityState.Detached ) {
+        throw new Error("Only entities with a non detached entity state may be imported.");
+      }
 
       // Merge if raw entity is in cache
       // UNLESS this is a new entity w/ a temp key
@@ -14632,8 +14813,8 @@ var EntityManager = (function () {
 
       if (queryOptions.fetchStrategy === FetchStrategy.FromLocalCache) {
         try {
-          results = em.executeQueryLocally(query);
-          return Q.resolve({ results: results, query: query });
+          var qr = executeQueryLocallyCore(em, query);
+          return Q.resolve({ results: qr.results, entityManager: em, inlineCount: qr.inlineCount, query: query });
         } catch (e) {
           return Q.reject(e);
         }
@@ -15095,7 +15276,8 @@ var MappingContext = (function () {
         }
       }
     } else {
-      if (typeof node === 'object' && !__isDate(node)) {
+
+      if ((!meta.passThru) && typeof node === 'object' && !__isDate(node)) {
         node = processAnonType(mc, node);
       }
 
@@ -15148,7 +15330,7 @@ var MappingContext = (function () {
     node = meta.node || node;
 
     if (meta.ignore) return;
-
+    if (meta.passThru) return node;
     if (Array.isArray(node)) {
       nodeContext.nodeType = nodeContext.nodeType + "Item";
       result[key] = node.map(function (v, ix) {
@@ -15546,7 +15728,7 @@ breeze.SaveOptions = SaveOptions;
   };
 
   proto.executeQuery = function (mappingContext) {
-
+    var adapter = mappingContext.adapter = this;
     var deferred = Q.defer();
     var url = mappingContext.getUrl();
 
@@ -15646,7 +15828,7 @@ breeze.SaveOptions = SaveOptions;
             return request;
         };
         this.done = function (requests) {
-            // alter the array of requests representing the entire change-set 
+            // alter the array of requests representing the entire change-set
             // based on the saveContext and saveBundle
         };
     }
@@ -15695,7 +15877,7 @@ breeze.SaveOptions = SaveOptions;
      Returned value is ignored.
      @example
      this.done = function (requests) {
-            // alter the array of requests representing the entire change-set 
+            // alter the array of requests representing the entire change-set
             // based on the saveContext and saveBundle
         };
      @method done
@@ -15707,12 +15889,13 @@ breeze.SaveOptions = SaveOptions;
 
   proto._createChangeRequestInterceptor = function (saveContext, saveBundle) {
     var adapter = saveContext.adapter;
+    var cri = adapter.changeRequestInterceptor;
     var isFn = __isFunction;
-    var CRI = adapter.changeRequestInterceptor;
-    var pre = adapter.name + " DataServiceAdapter's ChangeRequestInterceptor";
-    var post = " is missing or not a function.";
-    if (isFn(CRI)) {
-      var interceptor = new CRI(saveContext, saveBundle);
+
+    if (isFn(cri)) {
+      var pre = adapter.name + " DataServiceAdapter's ChangeRequestInterceptor";
+      var post = " is missing or not a function.";
+      var interceptor = new cri(saveContext, saveBundle);
       if (!isFn(interceptor.getRequest)) {
         throw new Error(pre + '.getRequest' + post);
       }
@@ -15829,7 +16012,7 @@ breeze.SaveOptions = SaveOptions;
 // See https://docs.angularjs.org/api/ng/service/$http
 (function (factory) {
   // Module systems magic dance.
-  if (breeze) {
+  if (typeof breeze === "object") {
     factory(breeze);
   } else if (typeof require === "function" && typeof exports === "object" && typeof module === "object") {
     // CommonJS or Node: hard-coded dependency on "breeze"
@@ -15846,8 +16029,9 @@ breeze.SaveOptions = SaveOptions;
     this.name = "angular";
     this.defaultSettings = { };
     this.requestInterceptor = null;
-    this.$http;
-    this.$rootScope;
+    // Will set:
+    //   this.$http;
+    //   this.$rootScope;
   };
   var proto = ctor.prototype;
 
@@ -15862,7 +16046,7 @@ breeze.SaveOptions = SaveOptions;
         rootScope = $rootScope;
       }]);
       this.$http = http;
-      this.$rootScope = rootScope;     
+      this.$rootScope = rootScope;
     }
 
   };
@@ -15909,7 +16093,7 @@ breeze.SaveOptions = SaveOptions;
     var requestInfo = {
       adapter: this,      // this adapter
       config: ngConfig,   // angular's $http configuration object
-      zConfig: config,    // the config arg from the calling Breeze data service adapter
+      dsaConfig: config,  // the config arg from the calling Breeze DataServiceAdapter
       success: successFn, // adapter's success callback
       error: errorFn      // adapter's error callback
     }
@@ -15960,7 +16144,7 @@ breeze.SaveOptions = SaveOptions;
 
   function encodeParams(obj) {
     var query = '';
-    var key, subValue, innerObj, fullSubName;
+    var subValue, innerObj, fullSubName;
 
     for (var name in obj) {
       var value = obj[name];
@@ -15973,7 +16157,7 @@ breeze.SaveOptions = SaveOptions;
           innerObj[fullSubName] = subValue;
           query += encodeParams(innerObj) + '&';
         }
-      } else if (value instanceof Date) {
+      } else if (value && value.toISOString) { // a feature of Date-like things
         query += encodeURIComponent(name) + '=' + encodeURIComponent(value.toISOString()) + '&';
       } else if (value instanceof Object) {
         for (var subName in value) {
@@ -16000,7 +16184,7 @@ breeze.SaveOptions = SaveOptions;
 // see https://api.jquery.com/jQuery.ajax/
 (function (factory) {
   // Module systems magic dance.
-  if (breeze) {
+  if (typeof breeze === "object") {
     factory(breeze);
   } else if (typeof require === "function" && typeof exports === "object" && typeof module === "object") {
     // CommonJS or Node: hard-coded dependency on "breeze"
@@ -16052,7 +16236,7 @@ breeze.SaveOptions = SaveOptions;
     var requestInfo = {
       adapter: this,      // this adapter
       config: jqConfig,   // jQuery's ajax 'settings' object
-      zConfig: config,    // the config arg from the calling Breeze data service adapter
+      dsaConfig: config,  // the config arg from the calling Breeze DataServiceAdapter
       success: successFn, // adapter's success callback
       error: errorFn      // adapter's error callback
     }
@@ -16116,12 +16300,12 @@ breeze.SaveOptions = SaveOptions;
 
 }));
 ;(function (factory) {
-  if (breeze) {
+  if (typeof breeze === "object") {
     factory(breeze);
   } else if (typeof require === "function" && typeof exports === "object" && typeof module === "object") {
     // CommonJS or Node: hard-coded dependency on "breeze"
     factory(require("breeze"));
-  } else if (typeof define === "function" && define["amd"] && !breeze) {
+  } else if (typeof define === "function" && define["amd"]) {
     // AMD anonymous module with hard-coded dependency on "breeze"
     define(["breeze"], factory);
   }
@@ -16307,7 +16491,7 @@ breeze.SaveOptions = SaveOptions;
           if (uriKey) {
             // Strip baseUri to make uriKey a relative uri
             // Todo: why is this necessary when absolute works for every OData source tested?
-            var re = new RegExp('^' + mappingContext.dataService.serviceName, 'i')
+            var re = new RegExp('^' + mappingContext.dataService.serviceName, 'i');
             uriKey = uriKey.replace(re, '');
           }
           result.extraMetadata = {
@@ -16494,8 +16678,9 @@ breeze.SaveOptions = SaveOptions;
     // Examples of servicename -> routePrefix:
     //   'http://localhost:55802/odata/' -> 'odata/'
     //   'http://198.154.121.75/service/odata/' -> 'service/odata/'
+    var parser;
     if (typeof document === 'object') { // browser
-      var parser = document.createElement('a');
+      parser = document.createElement('a');
       parser.href = dataService.serviceName;
     } else { // node
       parser = url.parse(dataService.serviceName);
@@ -16527,12 +16712,12 @@ breeze.SaveOptions = SaveOptions;
 
 
 }));;(function (factory) {
-  if (breeze) {
+  if (typeof breeze === "object") {
     factory(breeze);
   } else if (typeof require === "function" && typeof exports === "object" && typeof module === "object") {
     // CommonJS or Node: hard-coded dependency on "breeze"
     factory(require("breeze"));
-  } else if (typeof define === "function" && define["amd"] && !breeze) {
+  } else if (typeof define === "function" && define["amd"]) {
     // AMD anonymous module with hard-coded dependency on "breeze"
     define(["breeze"], factory);
   }
@@ -16558,7 +16743,7 @@ breeze.SaveOptions = SaveOptions;
       var rawEntity = helper.unwrapInstance(e);
 
       var autoGeneratedKey = null;
-      if (e.entityType.autoGeneratedKeyType !== AutoGeneratedKeyType.None) {
+      if (e.entityType.autoGeneratedKeyType !== breeze.AutoGeneratedKeyType.None) {
         autoGeneratedKey = {
           propertyName: e.entityType.keyProperties[0].nameOnServer,
           autoGeneratedKeyType: e.entityType.autoGeneratedKeyType.name
@@ -16626,12 +16811,12 @@ breeze.SaveOptions = SaveOptions;
   breeze.config.registerAdapter("dataService", ctor);
 
 }));;(function (factory) {
-  if (breeze) {
+  if (typeof breeze === "object") {
     factory(breeze);
   } else if (typeof require === "function" && typeof exports === "object" && typeof module === "object") {
     // CommonJS or Node: hard-coded dependency on "breeze"
     factory(require("breeze"));
-  } else if (typeof define === "function" && define["amd"] && !breeze) {
+  } else if (typeof define === "function" && define["amd"]) {
     // AMD anonymous module with hard-coded dependency on "breeze"
     define(["breeze"], factory);
   }
@@ -16828,11 +17013,12 @@ breeze.SaveOptions = SaveOptions;
   }
 
   function getAccessorFn(bs, propName) {
-    return function () {
-      if (arguments.length == 0) {
+    return function() {
+      if (arguments.length === 0) {
         return bs[propName];
       } else {
         bs[propName] = arguments[0];
+        return undefined;
       }
     };
   }
@@ -16846,20 +17032,21 @@ breeze.SaveOptions = SaveOptions;
 
     var propDescr = Object.getOwnPropertyDescriptor(proto, property.name);
     // if not configurable; we can't touch it - so leave.
-    if (!propDescr.configurable) return;
+    if (!propDescr.configurable) return undefined;
     // if a data descriptor - don't change it - this is basically a static property - i.e. defined on every instance of the type with the same value.
-    if (propDescr.value) return;
+    if (propDescr.value) return undefined;
     // if a read only property descriptor - no need to change it.
-    if (!propDescr.set) return;
+    if (!propDescr.set) return undefined;
 
     var localAccessorFn = function (entity) {
       return function () {
-        if (arguments.length == 0) {
+        if (arguments.length === 0) {
           return propDescr.get.bind(entity)();
         } else {
           var set = propDescr.set;
           var rawSet = set.rawSet || set;
           rawSet.bind(entity)(arguments[0]);
+          return undefined;
         }
       };
     };
@@ -16918,18 +17105,20 @@ breeze.SaveOptions = SaveOptions;
 
 }));
 ;(function (factory) {
-  if (breeze) {
+  if (typeof breeze === "object") {
     factory(breeze);
   } else if (typeof require === "function" && typeof exports === "object" && typeof module === "object") {
     // CommonJS or Node: hard-coded dependency on "breeze"
     factory(require("breeze"));
-  } else if (typeof define === "function" && define["amd"] && !breeze) {
+  } else if (typeof define === "function" && define["amd"]) {
     // AMD anonymous module with hard-coded dependency on "breeze"
     define(["breeze"], factory);
   }
 }(function (breeze) {
   "use strict";
   var core = breeze.core;
+  var canIsolateES5Props = core.__isES5Supported;
+
   var ko;
 
   var ctor = function ModelLibraryKnockoutAdapter() {
@@ -16998,19 +17187,11 @@ breeze.SaveOptions = SaveOptions;
       return this;
     };
 
-    if (canIsolateES5Props()) {
+    if (canIsolateES5Props) {
       isolateES5Props(proto);
     }
 
   };
-
-  function canIsolateES5Props() {
-    try {
-      return Object.getPrototypeOf && Object.defineProperty({}, 'x', {});
-    } catch (e) {
-      return false;
-    }
-  }
 
   function isolateES5Props(proto) {
 
@@ -17021,18 +17202,17 @@ breeze.SaveOptions = SaveOptions;
       if (propDescr) {
         es5Descriptors[prop.name] = propDescr;
       }
-    })
-    if (!__isEmpty(es5Descriptors)) {
+    });
+    if (!core.isEmpty(es5Descriptors)) {
       var extra = stype._extra;
       extra.es5Descriptors = es5Descriptors;
       stype._koDummy = ko.observable(null);
-
     }
 
   }
 
   function getES5PropDescriptor(proto, propName) {
-    if (!canIsolateES5Props()) {
+    if (!canIsolateES5Props) {
       return null;
     }
     if (proto.hasOwnProperty(propName)) {
@@ -17067,7 +17247,8 @@ breeze.SaveOptions = SaveOptions;
           var setFn = propDescr.set.bind(entity);
           var rawAccessorFn = function (newValue) {
             if (arguments.length === 0) {
-              return getFn();
+              getFn();
+              return;
             } else {
               setFn(newValue);
             }
@@ -17130,7 +17311,6 @@ breeze.SaveOptions = SaveOptions;
         entity[propName] = koObj;
       }
 
-
     });
 
   };
@@ -17184,12 +17364,12 @@ breeze.SaveOptions = SaveOptions;
 
 }));
 ;(function (factory) {
-  if (breeze) {
+  if (typeof breeze === "object") {
     factory(breeze);
   } else if (typeof require === "function" && typeof exports === "object" && typeof module === "object") {
     // CommonJS or Node: hard-coded dependency on "breeze"
     factory(require("breeze"));
-  } else if (typeof define === "function" && define["amd"] && !breeze) {
+  } else if (typeof define === "function" && define["amd"]) {
     // AMD anonymous module with hard-coded dependency on "breeze"
     define(["breeze"], factory);
   }
@@ -17224,18 +17404,19 @@ breeze.SaveOptions = SaveOptions;
 
 
 ;(function (factory) {
-  if (breeze) {
+  if (typeof breeze === "object") {
     factory(breeze);
   } else if (typeof require === "function" && typeof exports === "object" && typeof module === "object") {
     // CommonJS or Node: hard-coded dependency on "breeze"
     factory(require("breeze"));
-  } else if (typeof define === "function" && define["amd"] && !breeze) {
+  } else if (typeof define === "function" && define["amd"]) {
     // AMD anonymous module with hard-coded dependency on "breeze"
     define(["breeze"], factory);
   }
 }(function (breeze) {
   "use strict";
   var EntityType = breeze.EntityType;
+  var toODataFragmentVisitor;
 
   var ctor = function UriBuilderODataAdapter() {
     this.name = "odata";
@@ -17277,39 +17458,39 @@ breeze.SaveOptions = SaveOptions;
     // private methods to this func.
 
     function toWhereODataFragment(wherePredicate) {
-      if (!wherePredicate) return;
+      if (!wherePredicate) return undefined;
       // validation occurs inside of the toODataFragment call here.
       return wherePredicate.visit({ entityType: entityType}, toODataFragmentVisitor );
     }
 
     function toOrderByODataFragment(orderByClause) {
-      if (!orderByClause) return;
+      if (!orderByClause) return undefined;
       orderByClause.validate(entityType);
       var strings = orderByClause.items.map(function (item) {
         return entityType.clientPropertyPathToServer(item.propertyPath, "/") + (item.isDesc ? " desc" : "");
       });
       // should return something like CompanyName,Address/City desc
       return strings.join(',');
-    };
+    }
 
     function toSelectODataFragment(selectClause) {
-      if (!selectClause) return;
+      if (!selectClause) return undefined;
       selectClause.validate(entityType);
       var frag = selectClause.propertyPaths.map(function (pp) {
         return  entityType.clientPropertyPathToServer(pp, "/");
       }).join(",");
       return frag;
-    };
+    }
 
     function toExpandODataFragment(expandClause) {
-      if (!expandClause) return;
+      if (!expandClause) return undefined;
       // no validate on expand clauses currently.
       // expandClause.validate(entityType);
       var frag = expandClause.propertyPaths.map(function (pp) {
         return entityType.clientPropertyPathToServer(pp, "/");
       }).join(",");
       return frag;
-    };
+    }
 
     function toQueryOptionsString(queryOptions) {
       var qoStrings = [];
@@ -17338,7 +17519,7 @@ breeze.SaveOptions = SaveOptions;
     return this.visit( context, toODataFragmentVisitor);
   }
 
-  var toODataFragmentVisitor = (function () {
+  toODataFragmentVisitor = (function () {
     var visitor = {
 
       passthruPredicate: function () {
@@ -17355,18 +17536,18 @@ breeze.SaveOptions = SaveOptions;
         var expr2Val = this.expr2.visit(context);
         var prefix = context.prefix;
         if (prefix) {
-          expr1Val = prefix + "/" + expr1Val
+          expr1Val = prefix + "/" + expr1Val;
         }
 
         var odataOp = odataOpFrom(this);
 
-        if (this.op.key == 'in') {
+        if (this.op.key === 'in') {
           var result = expr2Val.map(function (v) {
             return "(" + expr1Val + " eq " + v + ")";
           }).join(" or ");
           return result;
         } else if (this.op.isFunction) {
-          if (odataOp == "substringof") {
+          if (odataOp === "substringof") {
             return odataOp + "(" + expr2Val + "," + expr1Val + ") eq true";
           } else {
             return odataOp + "(" + expr1Val + "," + expr2Val + ") eq true";
@@ -17397,7 +17578,7 @@ breeze.SaveOptions = SaveOptions;
         var newContext = breeze.core.extend({}, context);
         newContext.entityType = this.expr.dataType;
         newContext.prefix = prefix;
-        var newPredVal = this.pred.visit(newContext)
+        var newPredVal = this.pred.visit(newContext);
         return exprVal + "/" + odataOpFrom(this) + "(" + prefix + ": " + newPredVal + ")";
       },
 

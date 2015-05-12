@@ -204,7 +204,7 @@ namespace EntityRepository.ODataServer
 
 		    routes.MapODataServiceRoute(routeName,
 			                            routePrefix,
-										edmModel ?? _containerMetadata.EdmModel,
+										edmModel ?? BuildEdmModel(), //_containerMetadata.EdmModel,
 			                            new DefaultODataPathHandler(),
 			                            GetRoutingConventions(),
 			                            batchHandler);

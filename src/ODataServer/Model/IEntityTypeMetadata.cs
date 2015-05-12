@@ -30,5 +30,8 @@ namespace EntityRepository.ODataServer.Model
 		Func<object, object> EntityKeyFunction { get; }
 
 		PropertyInfo SingleClrKeyProperty { get; }
+
+		PropertyInfo ClrProperty(IEdmProperty declaredEdmProperty);
+
 	}
 }

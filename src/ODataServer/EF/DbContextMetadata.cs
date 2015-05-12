@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 
+using System.Web.Http.OData;
 using EntityRepository.ODataServer.Model;
 using Microsoft.Data.Edm;
 using System;
@@ -17,6 +18,7 @@ using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using Microsoft.Data.OData;
 
 namespace EntityRepository.ODataServer.EF
 {
@@ -118,9 +120,12 @@ namespace EntityRepository.ODataServer.EF
 				sourceEntitySet.NavigationProperties = navigationMetadata;
 			}
 
-			edmModel = new FixedEfEdmModel(dbContext, entityTypesMetadata);
+			edmModel = FixupEfEdmModel(dbContext);
 
 			EdmContainer = edmModel.FindDeclaredEntityContainer(objectContext.DefaultContainerName);
+
+			// Setting the default container makes metadata URLs a little nicer
+			EdmModel.SetIsDefaultEntityContainer(EdmContainer, true);
 		}
 
 		private IEntityTypeMetadata[] FindTypeHierarchyFrom(IEntityTypeMetadata root, IEntityTypeMetadata[] allEntityTypes)
@@ -145,6 +150,40 @@ namespace EntityRepository.ODataServer.EF
 			return allEntityTypes.Where(entityTypeMetadata => typeHierarchy.Contains(entityTypeMetadata.ClrType)).ToArray();
 		}
 
+		///// <summary>
+		///// Namespace for internal EDM annotations.
+		///// </summary>
+		//internal const string EdmInternalAnnotationNamespace = "http://schemas.microsoft.com/ado/2011/04/edm/internal";
+		///// <summary>
+		///// Ugly hack for an odata annotation name.
+		///// </summary>
+		//private static readonly string s_clrTypeAnnotationLocalName = typeof(ClrTypeAnnotation).ToString().Replace(".", "_");
+
+		private IEdmModel FixupEfEdmModel(TDbContext dbContext)
+		{
+			var edmModel = new FixedEfEdmModel(dbContext, _entityTypes);
+
+			//var edmModel = dbContext.GetEdmModel();
+			return edmModel;
+
+			//// Add ClrTypeAnnotation for each EntityType - needed by Web API OData
+			//foreach (IEdmEntityType edmEntityType in edmModel.SchemaElements.OfType<IEdmEntityType>())
+			//{
+			//	var entityTypeMetadata = this.GetEntityType(edmEntityType);
+			//	if (entityTypeMetadata != null)
+			//	{
+			//		edmModel.DirectValueAnnotationsManager.SetAnnotationValue(edmEntityType,
+			//																  EdmInternalAnnotationNamespace,
+			//																  s_clrTypeAnnotationLocalName,
+			//																  new ClrTypeAnnotation(entityTypeMetadata.ClrType));
+			//	}
+			//}
+
+
+			//var odataModelBuilder = new EfODataModelBuilder();
+			//odataModelBuilder.ConfigureFrom(this);
+			//return odataModelBuilder.GetEdmModel();
+		}
 	}
 
 }

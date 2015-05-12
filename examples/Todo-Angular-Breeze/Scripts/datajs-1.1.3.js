@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft.  All rights reserved.
+// Copyright (c) Microsoft Open Technologies, Inc.  All rights reserved.
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal  in the Software without restriction, including without limitation the rights  to use, copy,
 // modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
@@ -2624,9 +2624,9 @@
                         window.clearTimeout(timeoutId);
                         removeCallback(name, tick);
 
-                        // Workaround for IE8 and below where trying to access data.constructor after the IFRAME has been removed
+                        // Workaround for IE8 and IE10 below where trying to access data.constructor after the IFRAME has been removed
                         // throws an "unknown exception"
-                        if (window.ActiveXObject && !window.DOMParser) {
+                        if (window.ActiveXObject) {
                             data = window.JSON.parse(window.JSON.stringify(data));
                         }
 
@@ -2639,7 +2639,10 @@
                             headers = { "Content-Type": "application/json" };
                         }
                         // Call the success callback in the context of the parent window, instead of the IFRAME
-                        delay(success, { body: data, statusCode: 200, headers: headers });
+                        delay(function () {
+                            removeIFrame(iframe);
+                            success({ body: data, statusCode: 200, headers: headers });
+                        });
                     }
                 };
 
@@ -6880,7 +6883,7 @@
         /// <returns type="string">Value after formatting</returns>
 
         value = "" + formatRowLiteral(value, type);
-        value = encodeURIComponent(value.replace("'", "''"));
+        value = encodeURIComponent(value.replace(/'/g, "''"));
         switch ((type)) {
             case "Edm.Binary":
                 return "X'" + value + "'";
@@ -7112,7 +7115,7 @@
             }
         }
 
-        var fragment = metadataUri.substring(fragmentStart + 1, fragmentEnd);
+        var fragment = decodeURIComponent(metadataUri.substring(fragmentStart + 1, fragmentEnd));
         if (fragment.indexOf("/$links/") > 0) {
             return jsonLightMakePayloadInfo(PAYLOADTYPE_LINKS);
         }

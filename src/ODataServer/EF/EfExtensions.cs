@@ -17,6 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Xml;
+using EntityRepository.ODataServer.Edm;
 using Microsoft.Data.Edm;
 
 namespace EntityRepository.ODataServer.EF
@@ -27,7 +28,7 @@ namespace EntityRepository.ODataServer.EF
 	public static class EfExtensions
 	{
 
-		private const string c_clrTypeMetadataKey = "http://schemas.microsoft.com/ado/2013/11/edm/customannotation:ClrType";
+		private const string c_clrTypeMetadataKey = EdmModelExtensions.ClrTypeAnnotationNamespace + ":" + EdmModelExtensions.ClrTypeAnnotationName;
 
 		public static IEdmModel GetEdmModel(this DbContext dbContext)
 		{

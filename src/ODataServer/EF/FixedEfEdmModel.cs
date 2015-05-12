@@ -1,23 +1,22 @@
-﻿// // -----------------------------------------------------------------------
-// <copyright file="FixedEFEdmModel.cs" company="EntityRepository Contributors" year="2013">
+﻿// -----------------------------------------------------------------------
+// <copyright file="FixedEfEdmModel.cs" company="EntityRepository Contributors" year="2013">
 // This software is part of the EntityRepository library
-// Copyright © 2012 EntityRepository Contributors
+// Copyright © 2012-2015 EntityRepository Contributors
 // http://entityrepository.codeplex.org/
 // </copyright>
 // -----------------------------------------------------------------------
 
-
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Data.Entity.Core.Metadata.Edm;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using EntityRepository.ODataServer.Model;
 using Microsoft.Data.Edm;
 using Microsoft.Data.Edm.Annotations;
+using Microsoft.Data.Edm.Csdl;
 using Microsoft.Data.Edm.Library;
+using Microsoft.Data.Edm.Library.Annotations;
 
 namespace EntityRepository.ODataServer.EF
 {
@@ -32,20 +31,32 @@ namespace EntityRepository.ODataServer.EF
 	/// </remarks>
 	internal sealed class FixedEfEdmModel : IEdmModel
 	{
+		private static readonly Version s_defaultDataServiceVersion = new Version(3, 0);
+		private static readonly Version s_defaultMaxDataServiceVersion = new Version(3, 0);
 
 		private readonly IEdmModel _dbContextEdmModel;
+
 		/// <summary>
-		/// Holds a mapping of EF EdmEntityType name => fixed types in this model.
+		/// Holds a mapping of EF EdmEntityType (old name) => fixed types in this model.
 		/// </summary>
 		private readonly Dictionary<string, EdmEntityTypeWrapper> _fixedTypes;
+
 		/// <summary>
-		/// Holds a mapping of entity container name -> fixed entity container
+		/// Holds a mapping of (new name) => entity types in this model.
+		/// </summary>
+		private readonly IDictionary<string, EdmEntityTypeWrapper> _entityTypes;
+
+		/// <summary>
+		/// Holds a mapping of EF entity container name -> fixed entity container
 		/// </summary>
 		private readonly Dictionary<string, EdmEntityContainerWrapper> _fixedContainers;
+
 		/// <summary>
 		/// Cache of all directly contained schema elements in this model
 		/// </summary>
 		private readonly IEnumerable<IEdmSchemaElement> _schemaElements;
+
+		private readonly DirectValueAnnotationsManagerWrapper _directValueAnnotationsManagerWrapper;
 
 		internal FixedEfEdmModel(DbContext dbContext, IEnumerable<IEntityTypeMetadata> entityTypesMetadata)
 		{
@@ -55,8 +66,14 @@ namespace EntityRepository.ODataServer.EF
 			_fixedTypes = new Dictionary<string, EdmEntityTypeWrapper>();
 			_fixedContainers = new Dictionary<string, EdmEntityContainerWrapper>();
 			FixUpEntityTypes(entityTypesMetadata);
+			_entityTypes = _fixedTypes.Values.ToDictionary(entityTypeWrapper => entityTypeWrapper.FullName());
 			FixUpEntityContainers();
 			_schemaElements = ReplaceFixedModelElements(_dbContextEdmModel.SchemaElements);
+			_directValueAnnotationsManagerWrapper = new DirectValueAnnotationsManagerWrapper(_dbContextEdmModel.DirectValueAnnotationsManager, this);
+
+			// set the data service version annotations.
+			this.SetDataServiceVersion(s_defaultDataServiceVersion);
+			this.SetMaxDataServiceVersion(s_defaultMaxDataServiceVersion);
 		}
 
 		private void FixUpEntityTypes(IEnumerable<IEntityTypeMetadata> entityTypesMetadata)
@@ -110,11 +127,11 @@ namespace EntityRepository.ODataServer.EF
 			}
 		}
 
-		private bool TryGetEntityTypeWrapperFor(IEdmEntityType edmEntityType, out EdmEntityTypeWrapper entityTypeWrapper)
+		private bool TryGetEntityTypeWrapperFor(IEdmEntityType innerEntityType, out EdmEntityTypeWrapper entityTypeWrapper)
 		{
-			if (edmEntityType != null)
+			if (innerEntityType != null)
 			{
-				string typeFullName = edmEntityType.FullName();
+				string typeFullName = innerEntityType.FullName();
 				return _fixedTypes.TryGetValue(typeFullName, out entityTypeWrapper);
 			}
 
@@ -150,6 +167,45 @@ namespace EntityRepository.ODataServer.EF
 			                       });
 		}
 
+		private bool TryGetEntityTypeWrapperForFixedEntityType(IEdmEntityType fixedEntityType, out EdmEntityTypeWrapper entityTypeWrapper)
+		{
+			if (fixedEntityType != null)
+			{
+				return _entityTypes.TryGetValue(fixedEntityType.FullName(), out entityTypeWrapper);
+			}
+
+			entityTypeWrapper = null;
+			return false;
+		}
+
+		private bool TryGetEntityContainerWrapperForFixedEntityContainer(IEdmEntityContainer fixedEntityContainer, out EdmEntityContainerWrapper entityContainerWrapper)
+		{
+			if (fixedEntityContainer != null)
+			{
+				return _fixedContainers.TryGetValue(fixedEntityContainer.Name, out entityContainerWrapper);
+			}
+
+			entityContainerWrapper = null;
+			return false;
+		}
+
+		private IEdmElement ConvertFixedEdmElementToInnerEdmElement(IEdmElement fixedEdmElement)
+		{
+			EdmEntityTypeWrapper entityTypeWrapper;
+			EdmEntityContainerWrapper entityContainerWrapper;
+			if (TryGetEntityTypeWrapperForFixedEntityType(fixedEdmElement as IEdmEntityType, out entityTypeWrapper))
+			{
+				return entityTypeWrapper.InnerEdmEntityType;
+			}
+			else if (TryGetEntityContainerWrapperForFixedEntityContainer(fixedEdmElement as IEdmEntityContainer, out entityContainerWrapper))
+			{
+				return entityContainerWrapper.InnerEdmEntityContainer;
+			}
+
+			// No fixup for this element
+			return fixedEdmElement;
+		}
+
 		#region IEdmModel
 
 		public IEdmEntityContainer FindDeclaredEntityContainer(string name)
@@ -162,7 +218,7 @@ namespace EntityRepository.ODataServer.EF
 		public IEdmSchemaType FindDeclaredType(string qualifiedName)
 		{
 			EdmEntityTypeWrapper typeWrapper;
-			if (_fixedTypes.TryGetValue(qualifiedName, out typeWrapper))
+			if (_entityTypes.TryGetValue(qualifiedName, out typeWrapper))
 			{
 				return typeWrapper;
 			}
@@ -174,22 +230,34 @@ namespace EntityRepository.ODataServer.EF
 
 		public IEnumerable<IEdmFunction> FindDeclaredFunctions(string qualifiedName)
 		{
+			// Not wrapped currently
 			return _dbContextEdmModel.FindDeclaredFunctions(qualifiedName);
 		}
 
 		public IEdmValueTerm FindDeclaredValueTerm(string qualifiedName)
 		{
+			// Not wrapped currently
 			return _dbContextEdmModel.FindDeclaredValueTerm(qualifiedName);
 		}
 
 		public IEnumerable<IEdmVocabularyAnnotation> FindDeclaredVocabularyAnnotations(IEdmVocabularyAnnotatable element)
 		{
-			return _dbContextEdmModel.FindDeclaredVocabularyAnnotations(element);
+			return _dbContextEdmModel.FindDeclaredVocabularyAnnotations(ConvertFixedEdmElementToInnerEdmElement(element) as IEdmVocabularyAnnotatable);
 		}
 
 		public IEnumerable<IEdmStructuredType> FindDirectlyDerivedTypes(IEdmStructuredType baseType)
 		{
-			return ReplaceFixedModelElements(_dbContextEdmModel.FindDirectlyDerivedTypes(baseType));
+			EdmEntityTypeWrapper baseTypeWrapper = null;
+			TryGetEntityTypeWrapperForFixedEntityType(baseType as IEdmEntityType, out baseTypeWrapper);
+			if (baseTypeWrapper != null)
+			{
+				return ReplaceFixedModelElements(_dbContextEdmModel.FindDirectlyDerivedTypes(baseTypeWrapper.InnerEdmEntityType));
+			}
+			else
+			{
+				// No type wrapper for baseType
+				return ReplaceFixedModelElements(_dbContextEdmModel.FindDirectlyDerivedTypes(baseType));
+			}
 		}
 
 		public IEnumerable<IEdmSchemaElement> SchemaElements
@@ -199,6 +267,7 @@ namespace EntityRepository.ODataServer.EF
 
 		public IEnumerable<IEdmVocabularyAnnotation> VocabularyAnnotations
 		{
+			// Not wrapped currently
 			get { return _dbContextEdmModel.VocabularyAnnotations; }
 		}
 
@@ -209,11 +278,10 @@ namespace EntityRepository.ODataServer.EF
 
 		public IEdmDirectValueAnnotationsManager DirectValueAnnotationsManager
 		{
-			get { return _dbContextEdmModel.DirectValueAnnotationsManager; }
+			get { return _directValueAnnotationsManagerWrapper; }
 		}
 
 		#endregion
-
 
 		/// <summary>
 		/// Wraps and fixes an <see cref="IEdmEntityType"/>.
@@ -224,7 +292,7 @@ namespace EntityRepository.ODataServer.EF
 			private readonly IEdmEntityType _innerEdmType;
 			private readonly Type _clrType;
 			private EdmEntityTypeWrapper _baseType;
-			private readonly HashSet<EdmNavigationPropertyWrapper> _declaredNavigationProperties; 
+			private readonly HashSet<EdmNavigationPropertyWrapper> _declaredNavigationProperties;
 
 			public EdmEntityTypeWrapper(Type clrType, IEdmEntityType edmType)
 			{
@@ -249,6 +317,11 @@ namespace EntityRepository.ODataServer.EF
 			internal void AddNavigationProperty(EdmNavigationPropertyWrapper navigationPropertyWrapper)
 			{
 				_declaredNavigationProperties.Add(navigationPropertyWrapper);
+			}
+
+			internal Type ClrType
+			{
+				get { return _clrType; }
 			}
 
 			#region IEdmEntityType
@@ -358,7 +431,7 @@ namespace EntityRepository.ODataServer.EF
 					EdmEntityTypeWrapper fixedElementType;
 					if (fixedTypes.TryGetValue(innerEntitySet.ElementType.FullName(), out fixedElementType))
 					{
-						var entitySetWrapper = new EdmEntitySetWrapper(innerEntitySet, this, fixedElementType, fixedTypes);
+						var entitySetWrapper = new EdmEntitySetWrapper(innerEntitySet, this, fixedElementType);
 						_fixedEntitySets.Add(entitySetWrapper.Name, entitySetWrapper);
 					}
 				}
@@ -367,6 +440,11 @@ namespace EntityRepository.ODataServer.EF
 			public IEnumerable<EdmEntitySetWrapper> EntitySetWrappers
 			{
 				get { return _fixedEntitySets.Values; }
+			}
+
+			internal IEdmEntityContainer InnerEdmEntityContainer
+			{
+				get { return _innerEntityContainer; }
 			}
 
 			#region IEdmEntityContainer
@@ -400,7 +478,7 @@ namespace EntityRepository.ODataServer.EF
 
 			public IEnumerable<IEdmEntityContainerElement> Elements
 			{
-				get { return _innerEntityContainer.Elements.Where(elt => !(elt is IEdmEntitySet)).Concat(_fixedEntitySets.Values); }
+				get { return _innerEntityContainer.Elements.Where(elt => ! (elt is IEdmEntitySet)).Concat(_fixedEntitySets.Values); }
 			}
 
 			#endregion
@@ -418,10 +496,9 @@ namespace EntityRepository.ODataServer.EF
 			private readonly EdmEntityTypeWrapper _elementType;
 			private IEdmNavigationTargetMapping[] _navigationTargetMappings;
 
-			public EdmEntitySetWrapper(IEdmEntitySet innerEntitySet, 
-				EdmEntityContainerWrapper container, 
-				EdmEntityTypeWrapper elementType, 
-				Dictionary<string, EdmEntityTypeWrapper> fixedTypes)
+			public EdmEntitySetWrapper(IEdmEntitySet innerEntitySet,
+			                           EdmEntityContainerWrapper container,
+			                           EdmEntityTypeWrapper elementType)
 			{
 				Contract.Requires<ArgumentNullException>(innerEntitySet != null);
 				Contract.Requires<ArgumentNullException>(container != null);
@@ -443,7 +520,7 @@ namespace EntityRepository.ODataServer.EF
 					var innerDeclaringType = innerNavigationMapping.NavigationProperty.DeclaringType as IEdmEntityType;
 					EdmEntityTypeWrapper declaringType;
 					if ((innerDeclaringType != null)
-						&& (fixedTypes.TryGetValue(innerDeclaringType.FullName(), out declaringType)))
+					    && (fixedTypes.TryGetValue(innerDeclaringType.FullName(), out declaringType)))
 					{
 						var propName = innerNavigationMapping.NavigationProperty.Name;
 						var navigationProperty = declaringType.DeclaredNavigationProperties().Single(navProp => navProp.Name == propName);
@@ -453,12 +530,12 @@ namespace EntityRepository.ODataServer.EF
 					}
 					else
 					{
-						throw new InvalidOperationException("IEdmNavigationTargetMapping could not be initialized for " + innerNavigationMapping.NavigationProperty.Name + " - perhaps we don't have correct support for complex types?");
+						throw new InvalidOperationException("IEdmNavigationTargetMapping could not be initialized for " + innerNavigationMapping.NavigationProperty.Name
+						                                    + " - perhaps we don't have correct support for complex types?");
 					}
 				}
 				_navigationTargetMappings = navigationMappings.ToArray();
 			}
-
 
 			#region IEdmEntitySet
 
@@ -494,7 +571,6 @@ namespace EntityRepository.ODataServer.EF
 			}
 
 			#endregion
-
 		}
 
 
@@ -507,6 +583,7 @@ namespace EntityRepository.ODataServer.EF
 			private readonly EdmEntityTypeWrapper _declaringType;
 			private readonly IEdmNavigationProperty _innerNavigationProperty;
 			private readonly EdmEntityTypeWrapper _toType;
+			private readonly IEdmTypeReference _toTypeReference;
 			private EdmNavigationPropertyWrapper _partner;
 
 			internal EdmNavigationPropertyWrapper(EdmEntityTypeWrapper declaringType, IEdmNavigationProperty innerNavigationProperty, EdmEntityTypeWrapper toType)
@@ -518,6 +595,21 @@ namespace EntityRepository.ODataServer.EF
 				_declaringType = declaringType;
 				_innerNavigationProperty = innerNavigationProperty;
 				_toType = toType;
+				_toTypeReference = CreateTypeReference();
+			}
+
+			private IEdmTypeReference CreateTypeReference()
+			{
+				IEdmTypeReference innerType = _innerNavigationProperty.Type;
+				IEdmTypeReference toEntityTypeReference = new EdmEntityTypeReference(_toType, innerType.IsNullable);
+				if (innerType.IsCollection())
+				{
+					return EdmCoreModel.GetCollection(toEntityTypeReference);
+				}
+				else
+				{
+					return toEntityTypeReference;
+				}
 			}
 
 			#region IEdmNavigationProperty and related
@@ -534,7 +626,7 @@ namespace EntityRepository.ODataServer.EF
 
 			public IEdmTypeReference Type
 			{
-				get { return _innerNavigationProperty.Type; }
+				get { return _toTypeReference; }
 			}
 
 			public IEdmStructuredType DeclaringType
@@ -579,7 +671,7 @@ namespace EntityRepository.ODataServer.EF
 						_partner = declaredPartner;
 					}
 					else
-					{	// Use an undeclared partner
+					{ // Use an undeclared partner
 						_partner = new EdmNavigationPropertyWrapper(_toType, innerPartner, _declaringType);
 					}
 					_partner.SetPartner(this);
@@ -605,6 +697,82 @@ namespace EntityRepository.ODataServer.EF
 			public bool ContainsTarget
 			{
 				get { return _innerNavigationProperty.ContainsTarget; }
+			}
+
+			#endregion
+		}
+
+
+		/// <summary>
+		/// Fixes up a wrapped IEdmDirectValueAnnotationsManager.
+		/// </summary>
+		private class DirectValueAnnotationsManagerWrapper : IEdmDirectValueAnnotationsManager
+		{
+
+			/// <summary>
+			/// The inner (wrapped) annotations manager, provided by the EF implementation, which uses EF namespaces instead of fixed up ones.
+			/// </summary>
+			private readonly IEdmDirectValueAnnotationsManager _innerAnnotationsManager;
+
+			/// <summary>
+			/// Contains this.
+			/// </summary>
+			private readonly FixedEfEdmModel _parent;
+
+			/// <summary>
+			/// An internal annotations manager - we also wrap this implementation.
+			/// </summary>
+			private readonly EdmDirectValueAnnotationsManager _annotationsManager;
+
+			internal DirectValueAnnotationsManagerWrapper(IEdmDirectValueAnnotationsManager innerAnnotationsManager, FixedEfEdmModel parent)
+			{
+				Contract.Requires<ArgumentNullException>(innerAnnotationsManager != null);
+				Contract.Requires<ArgumentNullException>(parent != null);
+
+				_innerAnnotationsManager = innerAnnotationsManager;
+				_parent = parent;
+				_annotationsManager = new EdmDirectValueAnnotationsManager();
+			}
+
+			#region IEdmDirectValueAnnotationsManager
+
+			public IEnumerable<IEdmDirectValueAnnotation> GetDirectValueAnnotations(IEdmElement element)
+			{
+				var innerElement = _parent.ConvertFixedEdmElementToInnerEdmElement(element);
+				var annotations = _innerAnnotationsManager.GetDirectValueAnnotations(innerElement);
+				return annotations.Concat(_annotationsManager.GetDirectValueAnnotations(element));
+			}
+
+			public void SetAnnotationValue(IEdmElement element, string namespaceName, string localName, object value)
+			{
+				_annotationsManager.SetAnnotationValue(element, namespaceName, localName, value);
+			}
+
+			public void SetAnnotationValues(IEnumerable<IEdmDirectValueAnnotationBinding> annotations)
+			{
+				_annotationsManager.SetAnnotationValues(annotations);
+			}
+
+			public object GetAnnotationValue(IEdmElement element, string namespaceName, string localName)
+			{
+				object value = _annotationsManager.GetAnnotationValue(element, namespaceName, localName);
+				if (value == null)
+				{
+					var innerElement = _parent.ConvertFixedEdmElementToInnerEdmElement(element);
+					value = _innerAnnotationsManager.GetAnnotationValue(innerElement, namespaceName, localName);
+				}
+				return value;
+			}
+
+			public object[] GetAnnotationValues(IEnumerable<IEdmDirectValueAnnotationBinding> annotations)
+			{
+				object[] values = _annotationsManager.GetAnnotationValues(annotations);
+				if (values.Length == 0)
+				{
+					// TODO: Wrap the inner annotation values?
+					throw new NotImplementedException();
+				}
+				return values;
 			}
 
 			#endregion

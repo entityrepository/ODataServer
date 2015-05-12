@@ -6,18 +6,14 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Web.Http.OData.Batch;
 using System.Web.Http.OData.Builder;
-using System.Web.Http.OData.Routing;
 using EntityRepository.ODataServer;
 using EntityRepository.ODataServer.EF;
 using EntityRepository.ODataServer.Model;
 using EntityRepository.ODataServer.Util;
-using Scrum.Dal;
 using Scrum.Model.Base;
 using System;
 using System.Web.Http;
-using Scrum.WebApi.Models;
 
 namespace Scrum.WebApi
 {
@@ -50,13 +46,13 @@ namespace Scrum.WebApi
 
 			oDataServerConfigurer.AddStandardEntitySetControllers(DbSetControllerSelector);
 
-			//// TODO: Remove this - using to compare ODataConventionModelBuilder's EDM to what EF creates.
-			//var odataModelBuilder = new ODataConventionModelBuilder(config);
-			//odataModelBuilder.ConfigureFromContainer(oDataServerConfigurer.ContainerMetadata);
+			// TODO: Remove this - using to compare ODataConventionModelBuilder's EDM to what EF creates.
+			var odataModelBuilder = new ODataConventionModelBuilder(config);
+			odataModelBuilder.ConfigureFromContainer(oDataServerConfigurer.ContainerMetadata);
 
-			oDataServerConfigurer.ConfigureODataRoutes(config.Routes, "ODataRoute", ODataRoute, GlobalConfiguration.DefaultServer);
+			oDataServerConfigurer.ConfigureODataRoutes(config.Routes, "ODataRoute", ODataRoute, GlobalConfiguration.DefaultServer,
 				// TODO: Remove this arg
-				//odataModelBuilder.GetEdmModel());
+				odataModelBuilder.GetEdmModel());
 		}
 
 		/// <summary>

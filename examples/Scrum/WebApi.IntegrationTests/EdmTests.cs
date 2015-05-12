@@ -13,6 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 using EntityRepository.ODataServer.EF;
+using Microsoft.Data.Edm;
 using Microsoft.Data.Edm.Csdl;
 using Microsoft.Data.Edm.Validation;
 using Scrum.Dal;
@@ -32,8 +33,9 @@ namespace Scrum.WebApi.IntegrationTests
 		[Fact]
 		public void DumpScrumDbEdmx()
 		{
+			var xmlSettings = new XmlWriterSettings() { Indent = true };
 			using (var db = new ScrumDb())
-			using (XmlWriter writer = XmlWriter.Create(Console.Out))
+			using (XmlWriter writer = XmlWriter.Create(Console.Out, xmlSettings))
 			{
 				EdmxWriter.WriteEdmx(db, writer);
 			}
@@ -67,7 +69,34 @@ namespace Scrum.WebApi.IntegrationTests
 			}
 		}
 
+		[Fact]
+		public void DumpFixedUpScrumDbEdmx()
+		{
+			DbContextMetadata<ScrumDb> dbContextMetadata;
 
+			using (var db = new ScrumDb())
+			{
+				dbContextMetadata = new DbContextMetadata<ScrumDb>(db);
+			}
+			IEdmModel edmModel = dbContextMetadata.EdmModel;
+
+			var xmlSettings = new XmlWriterSettings() { Indent = true };
+			IEnumerable<EdmError> writeErrors;
+			using (XmlWriter writer = XmlWriter.Create(Console.Out, xmlSettings))
+			{
+				Microsoft.Data.Edm.Csdl.EdmxWriter.TryWriteEdmx(edmModel, writer, EdmxTarget.OData, out writeErrors);
+			}
+
+			if (writeErrors.Any())
+			{
+				Console.WriteLine();
+				Console.WriteLine("EDMX write errors:");
+				foreach (var error in writeErrors)
+				{
+					Console.WriteLine(error.ToString());
+				}
+			}
+		}
 
 	}
 

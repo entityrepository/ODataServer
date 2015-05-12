@@ -71,8 +71,8 @@
     <Compile Include="Batch\ContentIdHelper.cs" />
     <Compile Include="Batch\ODataServerBatchHandler.cs" />
     <Compile Include="Batch\ChangeSetExtensions.cs" />
+    <Compile Include="Edm\EdmModelExtensions.cs" />
     <Compile Include="EF\EfExtensions.cs" />
-    <Compile Include="EF\EfODataModelBuilder.cs" />
     <Compile Include="EF\FixedEfEdmModel.cs" />
     <Compile Include="Ioc\ContainerExtensions.cs" />
     <Compile Include="Ioc\IModule.cs" />
@@ -129,6 +129,7 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
 			 Other similar extension points exist, see Microsoft.Common.targets.

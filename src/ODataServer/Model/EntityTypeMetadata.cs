@@ -58,6 +58,11 @@ namespace EntityRepository.ODataServer.Model
 			}
 		}
 
+		public PropertyInfo ClrProperty(IEdmProperty declaredEdmProperty)
+		{
+			return ClrType.GetProperty(declaredEdmProperty.Name, BindingFlags.Instance | BindingFlags.Public);
+		}
+
 		private static Func<object, object> GetUntypedEntityKeyFunction(IEntityTypeMetadata entityTypeMetadata)
 		{
 			Contract.Assert(entityTypeMetadata != null);

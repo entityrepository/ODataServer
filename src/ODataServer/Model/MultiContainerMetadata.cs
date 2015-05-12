@@ -25,6 +25,7 @@ namespace EntityRepository.ODataServer.Model
 	{
 
 		private readonly IContainerMetadata[] _innerContainers;
+		private readonly IEnumerable<IEdmSchemaElement> _schemaElements;
 
 		public MultiContainerMetadata(params IContainerMetadata[] innerContainers)
 		{
@@ -35,6 +36,12 @@ namespace EntityRepository.ODataServer.Model
 			Name = typeof(T).Name;
 			Namespace = typeof(T).Namespace;
 			_innerContainers = innerContainers;
+
+			// Cache the schema elements to improve perf
+			_schemaElements = _innerContainers
+				.SelectMany(c => c.EdmModel.SchemaElements.Where(elt => !(elt is IEdmEntityContainer)))
+				.Concat(new IEdmSchemaElement[] { (IEdmEntityContainer) this })
+				.Distinct();
 		}
 
 		#region IContainerMetadata
@@ -116,7 +123,7 @@ namespace EntityRepository.ODataServer.Model
 
 		public IEnumerable<IEdmSchemaElement> SchemaElements
 		{
-			get { return _innerContainers.SelectMany(c => c.EdmModel.SchemaElements).Distinct(); }
+			get { return _schemaElements; }
 		}
 
 		public IEnumerable<IEdmVocabularyAnnotation> VocabularyAnnotations
