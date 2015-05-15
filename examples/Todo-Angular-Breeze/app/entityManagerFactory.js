@@ -8,20 +8,12 @@
 (function () {
     'use strict';
     
-    var serviceId = 'entityManagerFactory';
     angular.module('app')
-           .factory(serviceId, ['breeze', emFactory]);
+           .factory('entityManagerFactory', ['breeze', emFactory]);
 
     function emFactory(breeze) {
-        configureBreeze();
         var serviceRoot = window.location.protocol + '//' + window.location.host + '/';
-        var serviceName = serviceRoot + 'odata/';
-        var factory = {
-            newManager: newManager,
-            serviceName: serviceName
-        };
-
-        return factory;
+        var serviceUrl = serviceRoot + 'odata/';
 
         function configureBreeze() {           
             // use Web API OData to query and save
@@ -37,10 +29,16 @@
         }
 
         function newManager() {
-        	var mgr = new breeze.EntityManager(serviceName);
+        	var mgr = new breeze.EntityManager(serviceUrl);
             return mgr;
         }
 
+        var factory = {
+        	newManager: newManager,
+        	serviceName: serviceUrl
+        };
 
+        configureBreeze();
+        return factory;
     }
 })();

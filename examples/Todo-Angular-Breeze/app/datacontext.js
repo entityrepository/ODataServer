@@ -122,32 +122,32 @@
                 return $q.reject(error); // pass error along to next handler
             }
 
-            function prepareSaveBatches() {
-                /* Aaargh! 
-                * Web API OData doesn't calculate the proper save order
-                * which means, if we aren't careful on the client,
-                * we could save a new TodoItem before we saved its parent new TodoList
-                * or delete the parent TodoList before saving its deleted child TodoItems.
-                * OData says it is up to the client to save entities in the order
-                * required by referential constraints of the database.
-                * While we could save each time you make a change, that sucks.
-                * So we'll divvy up the pending changes into 4 batches
-                * 1. Deleted Todos
-                * 2. Deleted TodoLists
-                * 3. Added TodoLists
-                * 4. Every other change
-                */
-                var batches = [];
-                batches.push(manager.getEntities(['TodoItem'], [breeze.EntityState.Deleted]));
-                batches.push(manager.getEntities(['TodoList'], [breeze.EntityState.Deleted]));
-                batches.push(manager.getEntities(['TodoList'], [breeze.EntityState.Added]));
-                batches.push(null); // empty = save all remaining pending changes
-                return batches;
-                /*
-                 *  No we can't flatten into one request because Web API OData reorders
-                 *  arbitrarily, causing the database failure we're trying to avoid.
-                 */
-            }
+            //function prepareSaveBatches() {
+            //    /* Aaargh! 
+            //    * Web API OData doesn't calculate the proper save order
+            //    * which means, if we aren't careful on the client,
+            //    * we could save a new TodoItem before we saved its parent new TodoList
+            //    * or delete the parent TodoList before saving its deleted child TodoItems.
+            //    * OData says it is up to the client to save entities in the order
+            //    * required by referential constraints of the database.
+            //    * While we could save each time you make a change, that sucks.
+            //    * So we'll divvy up the pending changes into 4 batches
+            //    * 1. Deleted Todos
+            //    * 2. Deleted TodoLists
+            //    * 3. Added TodoLists
+            //    * 4. Every other change
+            //    */
+            //    var batches = [];
+            //    batches.push(manager.getEntities(['TodoItem'], [breeze.EntityState.Deleted]));
+            //    batches.push(manager.getEntities(['TodoList'], [breeze.EntityState.Deleted]));
+            //    batches.push(manager.getEntities(['TodoList'], [breeze.EntityState.Added]));
+            //    batches.push(null); // empty = save all remaining pending changes
+            //    return batches;
+            //    /*
+            //     *  No we can't flatten into one request because Web API OData reorders
+            //     *  arbitrarily, causing the database failure we're trying to avoid.
+            //     */
+            //}
         }
     }
 })();
