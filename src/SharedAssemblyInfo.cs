@@ -16,7 +16,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("EntityRepository Contributors")]
 [assembly: AssemblyProduct("EntityRepository")]
-[assembly: AssemblyCopyright("Copyright © 2013 EntityRepository Contributors")]
+[assembly: AssemblyCopyright("Copyright © 2013-2015 EntityRepository Contributors")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -39,8 +39,8 @@ using System.Runtime.InteropServices;
 
 // Guideline: Informational/semver increments on every build.  Assembly version should only increment
 // on breaking changes, aka major version changes.
-[assembly: AssemblyVersion("0.8.1.0")]
-[assembly: AssemblyFileVersion("0.8.1.0")]
+[assembly: AssemblyVersion("0.9.0.0")]
+[assembly: AssemblyFileVersion("0.9.0.0")]
 
 // Semantic version (http://semver.org) . First 3 numbers must match first 3 numbers of AssemblyVersion and AssemblyFileVersion.
-[assembly: AssemblyInformationalVersion("0.8.2-beta")]
+[assembly: AssemblyInformationalVersion("0.9.0-beta")]
