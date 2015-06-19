@@ -14,7 +14,9 @@ using Microsoft.Data.Edm.Csdl;
 using Microsoft.Data.Edm.Validation;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml;
+using EntityRepository.ODataServer.Edm;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -35,19 +37,54 @@ namespace EntityRepository.ODataServer.UnitTests
 		}
 
 		[Fact]
-		public void DumpDbContextEntityDataModel()
+		public void DumpStandardDbContextEntityDataModel()
 		{
-			StringWriter sw = new StringWriter();
 			using (EStoreDb db = new EStoreDb())
-			using (XmlWriter xmlWriter = XmlWriter.Create(sw, new XmlWriterSettings() { Indent = true }))
 			{
 				IEdmModel edm = db.GetEdmModel();
+				DumpEdm(edm);
+			}
+		}
+
+		[Fact]
+		public void DumpFixedDbContextEntityDataModel()
+		{
+			string edmXml;
+
+			using (EStoreDb db = new EStoreDb())
+			{
+				var dbContextMetadata = new DbContextMetadata<EStoreDb>(db);
+				IEdmModel edm = dbContextMetadata.EdmModel;
+
+				edm.RemoveClrTypeAnnotations();
+				edmXml = DumpEdm(edm);
+
+				//foreach (var elt in edm.SchemaElements)
+				//{
+				//	var directValueAnnotations = edm.DirectValueAnnotationsManager.GetDirectValueAnnotations(elt).ToArray();
+				//	var vocabularyAnnotations = edm.FindDeclaredVocabularyAnnotations(elt).ToArray();
+				//	_testOutput.WriteLine("{0} has {1} DirectValueAnnotations; {2} VocabularyAnnotations", elt.FullName(), directValueAnnotations.Length, vocabularyAnnotations.Length);
+				//}
+
+			}
+
+			Assert.DoesNotContain("ClrType", edmXml);
+			Assert.DoesNotContain("__", edmXml);
+		}
+
+		private string DumpEdm(IEdmModel edmModel)
+		{
+			StringWriter sw = new StringWriter();
+			using (XmlWriter xmlWriter = XmlWriter.Create(sw, new XmlWriterSettings() { Indent = true }))
+			{
 				IEnumerable<EdmError> edmErrors;
-				bool success = edm.TryWriteCsdl(xmlWriter, out edmErrors);
+				bool success = EdmxWriter.TryWriteEdmx(edmModel, xmlWriter, EdmxTarget.OData, out edmErrors);
 				Assert.True(success);
 			}
 
-			_testOutput.WriteLine(sw.ToString());
+			string edmXml = sw.ToString();
+			_testOutput.WriteLine(edmXml);
+			return edmXml;
 		}
 
 	}
