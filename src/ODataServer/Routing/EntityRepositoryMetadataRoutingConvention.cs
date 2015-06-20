@@ -34,8 +34,8 @@ namespace EntityRepository.ODataServer.Routing
 		/// </returns>
 		public string SelectController(ODataPath odataPath, HttpRequestMessage request)
 		{
-			Contract.Requires<ArgumentNullException>(odataPath != null);
-			Contract.Requires<ArgumentNullException>(request != null);
+			//Contract.Requires<ArgumentNullException>(odataPath != null);
+			//Contract.Requires<ArgumentNullException>(request != null);
 
 			if (odataPath.PathTemplate == "~" ||
 			    odataPath.PathTemplate == "~/$metadata")
@@ -57,9 +57,9 @@ namespace EntityRepository.ODataServer.Routing
 		/// </returns>
 		public string SelectAction(ODataPath odataPath, HttpControllerContext controllerContext, ILookup<string, HttpActionDescriptor> actionMap)
 		{
-			Contract.Requires<ArgumentNullException>(odataPath != null);
-			Contract.Requires<ArgumentNullException>(controllerContext != null);
-			Contract.Requires<ArgumentNullException>(actionMap != null);
+			//Contract.Requires<ArgumentNullException>(odataPath != null);
+			//Contract.Requires<ArgumentNullException>(controllerContext != null);
+			//Contract.Requires<ArgumentNullException>(actionMap != null);
 
 			if (odataPath.PathTemplate == "~")
 			{

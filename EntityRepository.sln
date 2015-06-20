@@ -31,6 +31,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Todo-Angular-Breeze", "Todo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ODataBreezejsSample", "examples\Todo-Angular-Breeze\ODataBreezejsSample.csproj", "{E40E7382-DDD1-4AB7-8B7C-47051548B98D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{4E8206A6-377B-4F6D-99DC-9B2DDF8E25A1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "msbuild", "msbuild", "{D0EA0C14-349C-4D52-BDEA-CFB13D4AED2E}"
+	ProjectSection(SolutionItems) = preProject
+		tools\msbuild\EntityRepository.Common.props = tools\msbuild\EntityRepository.Common.props
+		tools\msbuild\xUnit.targets = tools\msbuild\xUnit.targets
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		CodeAnalysis|Any CPU = CodeAnalysis|Any CPU
@@ -106,6 +114,7 @@ Global
 		{CE990F54-D0E9-4EE1-A271-40D912A59CFF} = {EE6E9772-C4E4-489F-B8FD-21532AF8B2C6}
 		{AFC80C82-D1FF-4E29-9848-4492F2E36DA9} = {F1A50CFC-6FA5-4F5F-8A46-7E287761AC70}
 		{E40E7382-DDD1-4AB7-8B7C-47051548B98D} = {AFC80C82-D1FF-4E29-9848-4492F2E36DA9}
+		{D0EA0C14-349C-4D52-BDEA-CFB13D4AED2E} = {4E8206A6-377B-4F6D-99DC-9B2DDF8E25A1}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = src\ODataServer\EntityRepository.ODataServer.csproj
