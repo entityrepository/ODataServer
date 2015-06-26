@@ -15,8 +15,6 @@ namespace ODataBreezejsSample
 
 		public void Configuration(IAppBuilder owinAppBuilder)
         {
-			ConfigureAuth(owinAppBuilder);
-
 			// DependencyInjection config
 			_container.RegisterModules(new ODataServiceModule(), new IocConfig());
 

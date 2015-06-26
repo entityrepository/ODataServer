@@ -15,34 +15,23 @@ xUnit.targets
 		<ContinueOnxUnitFailures Condition=" $(ContinueOnxUnitFailures) == '' ">False</ContinueOnxUnitFailures>
 	</PropertyGroup>
 
+	<!-- UsingTask should now be defined by xunit.runner.msbuild.props 
 	<UsingTask AssemblyFile="$(xUnitRunnerAssembly)"
-			TaskName="Xunit.Runner.MSBuild.xunit" />
+			TaskName="Xunit.Runner.MSBuild.xunit" /> -->
 	
 	<!-- msbuild /t:Test [/p:xUnitVerbose][/p:ContinueOnxUnitFailures]
 	
 	Runs all tests in the current target assembly.
 	-->
 	<Target Name="Test">
-		<PropertyGroup>
-			<xUnit1xLib>$(TargetDir)\xunit.dll</xUnit1xLib>
-			<xUnit2xLib>$(TargetDir)\xunit.abstractions.dll</xUnit2xLib>
-		</PropertyGroup>
-		
 		<!-- Run build if $(TargetPath) doesn't exist; if it does exist, don't rebuild automatically.
-		In other words, tests are re-run on old builds. If you want a build, specify both targets, eg msbuild /t:build,test
-		-->
+		In other words, tests are re-run on old builds. If you want a build, specify both targets, eg msbuild /t:build,test	-->
 		<CallTarget Targets="build" Condition=" !Exists('$(TargetPath)') " />
-		
-		<!-- After a build, xunit.dll must be in the TargetDir.  If not, tests can't be run. -->
-		<Error Condition=" !Exists('$(xUnit1xLib)') and !Exists('$(xUnit2xLib)') " Text="Unit tests cannot be run without a NuGet dependency on xUnit (1.x or 2.x)." />
 
-		<!-- It seems that *.xunit config files are not currently used by the MSBuild task
-		<ItemGroup>
-			<XUnitConfigFile Include="$(MSBuildProjectDirectory)*.xunit" />
-		</ItemGroup> -->
-
-		<xunit Assemblies="$(TargetPath)" Verbose="$(xUnitVerbose)" ContinueOnError="$(ContinueOnxUnitFailures)" />
-
+		<xunit Assemblies="$(TargetPath)" 
+					 Verbose="$(xUnitVerbose)" 
+					 SerializeTestCases="true"
+					 ContinueOnError="$(ContinueOnxUnitFailures)" />
 	</Target>
 
 </Project>

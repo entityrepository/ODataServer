@@ -8,12 +8,13 @@
 
 
 using System.Collections.Generic;
-/// <summary>
-/// Example model types used in unit tests.  Models on online store.
-/// </summary>
 using System.ComponentModel.DataAnnotations;
 
-namespace EntityRepository.ODataServer.UnitTests.EStore
+// <summary>
+// Example model types used in unit tests.  Models on online store.
+// </summary>
+// ReSharper disable once CheckNamespace
+namespace EntityRepository.ODataServer.UnitTests.EStore.Model
 {
 
 	public abstract class BaseEntity
@@ -28,14 +29,27 @@ namespace EntityRepository.ODataServer.UnitTests.EStore
 	}
 
 
-	public sealed class Product : BaseEntity
+	public class Product : BaseEntity
 	{
 		private readonly ICollection<Sku> _skus = new HashSet<Sku>();
 
+		[StringLength(128, MinimumLength = 2)]
+		public string Brand { get; set; }
+
 		[Required, StringLength(128, MinimumLength = 2)]
 		public string Name { get; set; }
+
 		public ICollection<Sku> Skus
 		{ get { return _skus; } }
+	}
+
+	public class MusicTrackProduct : Product
+	{
+		[Required, StringLength(128, MinimumLength = 2)]
+		public string Artist { get; set; }
+
+		[StringLength(128, MinimumLength = 2)]
+		public string Album { get; set; }
 	}
 
 	public sealed class Sku : BaseEntity

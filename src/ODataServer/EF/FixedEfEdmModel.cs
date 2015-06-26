@@ -65,11 +65,13 @@ namespace EntityRepository.ODataServer.EF
 			_dbContextEdmModel = dbContext.GetEdmModel();
 			_fixedTypes = new Dictionary<string, EdmEntityTypeWrapper>();
 			_fixedContainers = new Dictionary<string, EdmEntityContainerWrapper>();
+			_directValueAnnotationsManagerWrapper = new DirectValueAnnotationsManagerWrapper(_dbContextEdmModel.DirectValueAnnotationsManager, this);
+
 			FixUpEntityTypes(entityTypesMetadata);
 			_entityTypes = _fixedTypes.Values.ToDictionary(entityTypeWrapper => entityTypeWrapper.FullName());
 			FixUpEntityContainers();
+			FixUpAssociationNames();
 			_schemaElements = ReplaceFixedModelElements(_dbContextEdmModel.SchemaElements);
-			_directValueAnnotationsManagerWrapper = new DirectValueAnnotationsManagerWrapper(_dbContextEdmModel.DirectValueAnnotationsManager, this);
 
 			// set the data service version annotations.
 			this.SetDataServiceVersion(s_defaultDataServiceVersion);
@@ -123,6 +125,24 @@ namespace EntityRepository.ODataServer.EF
 				foreach (var entitySetWrapper in containerWrapper.EntitySetWrappers)
 				{
 					entitySetWrapper.WrapNavigationTargets(containerWrapper, _fixedTypes);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Fixes up Association and AssociationSet names, so they're "Order_OrderedBy" instead of "EntityRepository.ODataServer.UnitTests.EStore.Model.EntityRepository_ODataServer_UnitTests_EStore_Model_User_Order__OrderedBy__Source_EntityRepository_ODataServer_UnitTests_EStore_Model_Order_OrderedBy"
+		/// </summary>
+		private void FixUpAssociationNames()
+		{
+			foreach (var edmTypeWrapper in _fixedTypes.Values)
+			{
+				// Fixup all navigation properties to use the correct type wrapper
+				foreach (IEdmNavigationProperty navigationProperty in edmTypeWrapper.DeclaredNavigationProperties())
+				{
+					IEdmNavigationProperty fromPrincipal = navigationProperty.GetPrimary();
+					string associationName = fromPrincipal.DeclaringEntityType().Name + "_" + fromPrincipal.Name;
+					this.SetAssociationName(fromPrincipal, associationName);
+					this.SetAssociationName(fromPrincipal.Partner, associationName);
 				}
 			}
 		}
@@ -719,11 +739,6 @@ namespace EntityRepository.ODataServer.EF
 			/// </summary>
 			private readonly FixedEfEdmModel _parent;
 
-			/// <summary>
-			/// An internal annotations manager - we also wrap this implementation.
-			/// </summary>
-			private readonly EdmDirectValueAnnotationsManager _annotationsManager;
-
 			internal DirectValueAnnotationsManagerWrapper(IEdmDirectValueAnnotationsManager innerAnnotationsManager, FixedEfEdmModel parent)
 			{
 				Contract.Requires<ArgumentNullException>(innerAnnotationsManager != null);
@@ -731,7 +746,6 @@ namespace EntityRepository.ODataServer.EF
 
 				_innerAnnotationsManager = innerAnnotationsManager;
 				_parent = parent;
-				_annotationsManager = new EdmDirectValueAnnotationsManager();
 			}
 
 			#region IEdmDirectValueAnnotationsManager
@@ -739,43 +753,46 @@ namespace EntityRepository.ODataServer.EF
 			public IEnumerable<IEdmDirectValueAnnotation> GetDirectValueAnnotations(IEdmElement element)
 			{
 				var innerElement = _parent.ConvertFixedEdmElementToInnerEdmElement(element);
-				var annotations = _innerAnnotationsManager.GetDirectValueAnnotations(innerElement);
-				return annotations.Concat(_annotationsManager.GetDirectValueAnnotations(element));
+				return _innerAnnotationsManager.GetDirectValueAnnotations(innerElement);
+				//.Union(_innerAnnotationsManager.GetDirectValueAnnotations(innerElement), AnnotationFullNameEqualityComparer.Instance);
 			}
 
 			public void SetAnnotationValue(IEdmElement element, string namespaceName, string localName, object value)
 			{
-				_annotationsManager.SetAnnotationValue(element, namespaceName, localName, value);
+				// Set the inner value to for the same to null, to avoid duplicates/conflicts.
+				IEdmElement innerElement = _parent.ConvertFixedEdmElementToInnerEdmElement(element);
+				_innerAnnotationsManager.SetAnnotationValue(innerElement, namespaceName, localName, value);
 			}
 
 			public void SetAnnotationValues(IEnumerable<IEdmDirectValueAnnotationBinding> annotations)
 			{
-				_annotationsManager.SetAnnotationValues(annotations);
+				foreach (var annotation in annotations)
+				{
+					SetAnnotationValue(annotation.Element, annotation.NamespaceUri, annotation.Name, annotation.Value);
+				}
 			}
 
 			public object GetAnnotationValue(IEdmElement element, string namespaceName, string localName)
 			{
-				object value = _annotationsManager.GetAnnotationValue(element, namespaceName, localName);
-				if (value == null)
-				{
-					var innerElement = _parent.ConvertFixedEdmElementToInnerEdmElement(element);
-					value = _innerAnnotationsManager.GetAnnotationValue(innerElement, namespaceName, localName);
-				}
-				return value;
+				var innerElement = _parent.ConvertFixedEdmElementToInnerEdmElement(element);
+				return _innerAnnotationsManager.GetAnnotationValue(innerElement, namespaceName, localName);
 			}
 
-			public object[] GetAnnotationValues(IEnumerable<IEdmDirectValueAnnotationBinding> annotations)
+			public object[] GetAnnotationValues(IEnumerable<IEdmDirectValueAnnotationBinding> annotationBindings)
 			{
-				object[] values = _annotationsManager.GetAnnotationValues(annotations);
-				if (values.Length == 0)
+				object[] values = new object[annotationBindings.Count()];
+
+				int index = 0;
+				foreach (IEdmDirectValueAnnotationBinding annotationBinding in annotationBindings)
 				{
-					// TODO: Wrap the inner annotation values?
-					throw new NotImplementedException();
+					values[index++] = GetAnnotationValue(annotationBinding.Element, annotationBinding.NamespaceUri, annotationBinding.Name);
 				}
+
 				return values;
 			}
 
 			#endregion
+
 		}
 
 	}

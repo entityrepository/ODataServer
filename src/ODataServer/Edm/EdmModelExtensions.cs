@@ -23,7 +23,7 @@ namespace EntityRepository.ODataServer.Edm
 	{
 		internal const string ClrTypeAnnotationNamespace = "http://schemas.microsoft.com/ado/2013/11/edm/customannotation";
 		internal const string ClrTypeAnnotationName = "ClrType";
-
+		internal const string UseClrTypesAnnotationName = "UseClrTypes";
 
 		/// <summary>
 		/// Removes <c>xmlns:p5="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" Name="Priority" p5:ClrType="Scrum.Model.Priority, Scrum.Model, Version=0.8.1.0, Culture=neutral, PublicKeyToken=null"</c> from the EdmModel.
@@ -33,10 +33,16 @@ namespace EntityRepository.ODataServer.Edm
 		{
 			Contract.Requires<ArgumentNullException>(edmModel != null);
 
+			// Clear <EntityType Name="Order" p5:ClrType="EntityRepository.ODataServer.UnitTests.EStore.Model.Order, EntityRepository.ODataServer.UnitTests, Version=0.9.0.0, Culture=neutral, PublicKeyToken=null"
 			foreach (var edmEntityType in edmModel.SchemaElements.OfType<IEdmEntityType>())
 			{
 				edmModel.DirectValueAnnotationsManager.SetAnnotationValue(edmEntityType, ClrTypeAnnotationNamespace, ClrTypeAnnotationName, null);
-			}			
+			}
+			// Clear <EntityContainer ... p5:UseClrTypes="true" 
+			foreach (var edmContainer in edmModel.SchemaElements.OfType<IEdmEntityContainer>())
+			{
+				edmModel.DirectValueAnnotationsManager.SetAnnotationValue(edmContainer, ClrTypeAnnotationNamespace, UseClrTypesAnnotationName, null);
+			}
 		}
 
 		// Equivalent to model.GetEntitySetUrl(e).ToString()- which is internal
