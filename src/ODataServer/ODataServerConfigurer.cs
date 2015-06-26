@@ -50,15 +50,15 @@ namespace EntityRepository.ODataServer
 		private readonly EntityRepositoryControllerSelector _controllerSelector;
 
 		// TODO: Remove this - but keeping it in for now until we prove in all cases that the ctor below is better.
-		//public ODataServerConfigurer(HttpConfiguration webApiConfig, IContainerMetadata containerMetadata)
-		//{
-		//	Contract.Requires<ArgumentNullException>(webApiConfig != null);
+		public ODataServerConfigurer(HttpConfiguration webApiConfig, IContainerMetadata containerMetadata)
+		{
+			Contract.Requires<ArgumentNullException>(webApiConfig != null);
 
-		//	_webApiConfig = webApiConfig;
-		//	_containerMetadata = containerMetadata;
+			_webApiConfig = webApiConfig;
+			_containerMetadata = containerMetadata;
 
-		//	_controllerSelector = EntityRepositoryControllerSelector.Install(webApiConfig, this);
-		//}
+			_controllerSelector = EntityRepositoryControllerSelector.Install(webApiConfig, this);
+		}
 
 		public ODataServerConfigurer(HttpConfiguration webApiConfig)
 		{

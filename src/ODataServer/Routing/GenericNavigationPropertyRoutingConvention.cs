@@ -20,7 +20,7 @@ namespace EntityRepository.ODataServer.Routing
 	/// <summary>
 	/// Similar to <see cref="NavigationRoutingConvention"/>, but routes to generic action methods instead of action methods containing the entity type name and the property name.
 	/// </summary>
-	internal class GenericNavigationPropertyRoutingConvention : EntitySetRoutingConvention
+	public class GenericNavigationPropertyRoutingConvention : EntitySetRoutingConvention
 	{
 
 		internal const string GetNavigationPropertyMethodName = "GetNavigationProperty";
@@ -91,7 +91,7 @@ namespace EntityRepository.ODataServer.Routing
 			       || (odataPath.PathTemplate == "~/entityset/key/$links/navigation/key");
 		}
 
-		internal static IEdmNavigationProperty GetNavigationProperty(ODataPath odataPath)
+		public static IEdmNavigationProperty GetNavigationProperty(ODataPath odataPath)
 		{
 			NavigationPathSegment segment = odataPath.Segments.OfType<NavigationPathSegment>().SingleOrDefault();
 			return segment == null ? null : segment.NavigationProperty;
