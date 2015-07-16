@@ -56,8 +56,12 @@ namespace Scrum.WebApi.IntegrationTests
 			var webApiConfig = new HttpConfiguration();
 			webApiConfig.DependencyResolver = new SimpleInjectorWebApiDependencyResolver(diContainer);
 			WebApiConfig.Register(webApiConfig);
-			//WebApiConfig.ConfigureODataService(webApiConfig);
-			app.UseWebApi(webApiConfig);
+			HttpServer webApiServer = new HttpServer(webApiConfig);
+			//WebApiConfig.ConfigureODataService(webApiServer);
+			// Map routes using class attributes
+			webApiConfig.MapHttpAttributeRoutes();
+
+			app.UseWebApi(webApiServer);
 		}
 
 		private void ConfigureOwinLogging(IAppBuilder owinAppBuilder, Container diContainer)

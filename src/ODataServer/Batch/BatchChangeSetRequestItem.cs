@@ -103,6 +103,7 @@ namespace EntityRepository.ODataServer.Batch
 			ContentIdHelper.ResolveContentIdReferenceInRequestUrl(request);
 
 			HttpResponseMessage response = await invoker.SendAsync(request, cancellationToken);
+
 			ChangeSetExtensions.CopyContentIdHeaderToResponse(request, response);
 
 			ChangeSetExtensions.StoreLocationHeaderForContentId(response, _changeSetContext);
