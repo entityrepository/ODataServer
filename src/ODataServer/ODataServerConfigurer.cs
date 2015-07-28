@@ -6,17 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Configuration;
-using System.Threading;
-using System.Web.Http.OData.Batch;
-using System.Web.Http.OData.Extensions;
-using System.Web.Http.OData.Routing;
-using EntityRepository.ODataServer.Batch;
-using EntityRepository.ODataServer.EF;
-using EntityRepository.ODataServer.Model;
-using EntityRepository.ODataServer.Routing;
-using EntityRepository.ODataServer.Util;
-using Microsoft.Data.Edm;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -24,10 +13,16 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Web.Http;
 using System.Web.Http.Controllers;
-using System.Web.Http.OData;
 using System.Web.Http.OData.Builder;
+using System.Web.Http.OData.Extensions;
+using System.Web.Http.OData.Routing;
 using System.Web.Http.OData.Routing.Conventions;
-using Microsoft.Data.OData;
+using EntityRepository.ODataServer.Batch;
+using EntityRepository.ODataServer.EF;
+using EntityRepository.ODataServer.Model;
+using EntityRepository.ODataServer.Routing;
+using EntityRepository.ODataServer.Util;
+using Microsoft.Data.Edm;
 
 namespace EntityRepository.ODataServer
 {
@@ -263,9 +258,10 @@ namespace EntityRepository.ODataServer
 			IList<IODataRoutingConvention> routingConventions = ODataRoutingConventions.CreateDefault();
 			
 			// Replace the MetadataRoutingConvention
-			routingConventions.ReplaceSingle(convention => convention is System.Web.Http.OData.Routing.Conventions.MetadataRoutingConvention, new EntityRepositoryMetadataRoutingConvention());
+			routingConventions.ReplaceSingle(convention => convention is MetadataRoutingConvention, new EntityRepositoryMetadataRoutingConvention());
 
-			routingConventions.Insert(0, new GenericNavigationPropertyRoutingConvention());
+			// Add GenericNavigationPropertyRoutingConvention after ActionRoutingConvention, before Unmapped
+			routingConventions.Insert(routingConventions.Count - 1, new GenericNavigationPropertyRoutingConvention());
 			return routingConventions;
 		}
 
