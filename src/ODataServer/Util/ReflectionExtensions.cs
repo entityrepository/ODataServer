@@ -237,15 +237,23 @@ namespace EntityRepository.ODataServer.Util
 			Contract.Requires<ArgumentNullException>(source != null);
 			Contract.Requires<ArgumentNullException>(destination != null);
 
+			// Handle EF proxies here?
+			// Maybe this is too leaky, should be handled elsewhere?
+			var destinationType = destination.GetType();
+			if (destinationType.BaseType != null && destinationType.Namespace == "System.Data.Entity.DynamicProxies")
+			{
+				destinationType = destinationType.BaseType;
+			}
+
 			Type sourceType = source.GetType();
-			if (! Object.ReferenceEquals(sourceType, destination.GetType()))
+			if (! Object.ReferenceEquals(sourceType, destinationType))
 			{
 				throw new ArgumentException(string.Format("Source type '{0}' and destination type '{1}' must match.", sourceType.FullName, destination.GetType().FullName));
 			}
 
 			foreach (PropertyInfo property in sourceType.GetProperties(BindingFlags.GetProperty | BindingFlags.SetProperty | BindingFlags.Public | BindingFlags.Instance))
 			{
-				if (IsEdmPrimitiveType(property.GetType()))
+				if (IsEdmPrimitiveType(property.PropertyType))
 				{
 					object propertyValue = property.GetValue(source);
 					property.SetValue(destination, propertyValue);
@@ -253,18 +261,14 @@ namespace EntityRepository.ODataServer.Util
 			}
 		}
 
-		/// Determines whether the given type is a primitive type or
-		/// is a <see cref="string"/>, <see cref="DateTime"/>, <see cref="Decimal"/>,
-		/// <see cref="Guid"/>, <see cref="DateTimeOffset"/> or <see cref="TimeSpan"/>.
-		
 		/// <summary>
-		/// Determines whether a type is an Edm primitive type.  Should return false for all Navigation properties.
+		/// Determines whether a type is an EDM primitive type.  Should return false for all Navigation properties.
 		/// </summary>
 		/// <param name="type"></param>
 		/// <returns></returns>
 		/// <remarks>
-		/// Edm primitive types are CLR primitie types, or  <see cref="string"/>, <see cref="DateTime"/>, <see cref="Decimal"/>,
-		/// <see cref="Guid"/>, <see cref="DateTimeOffset"/> or <see cref="TimeSpan"/>
+		/// Edm primitive types are CLR primitive types, or  <see cref="string"/>, <see cref="DateTime"/>, <see cref="Decimal"/>,
+		/// <see cref="Guid"/>, <see cref="DateTimeOffset"/> or <see cref="TimeSpan"/>, or <see cref="Nullable"/> primitive types.
 		/// </remarks>
 		internal static bool IsEdmPrimitiveType(Type type)
 		{
@@ -288,6 +292,12 @@ namespace EntityRepository.ODataServer.Util
 			}
 			else if (type.IsValueType)
 			{
+				// Handle Nullable
+				if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+				{
+					type = type.GetGenericArguments()[0];
+				}
+
 				if (type.IsPrimitive)
 				{
 					return true;
