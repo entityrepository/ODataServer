@@ -55,11 +55,12 @@ namespace Scrum.WebApi.IntegrationTests
 			// Web API config
 			var webApiConfig = new HttpConfiguration();
 			webApiConfig.DependencyResolver = new SimpleInjectorWebApiDependencyResolver(diContainer);
-			WebApiConfig.Register(webApiConfig);
-			HttpServer webApiServer = new HttpServer(webApiConfig);
-			//WebApiConfig.ConfigureODataService(webApiServer);
+
 			// Map routes using class attributes
 			webApiConfig.MapHttpAttributeRoutes();
+
+			HttpServer webApiServer = new HttpServer(webApiConfig);
+			WebApiConfig.ConfigureODataService(webApiConfig, webApiServer);
 
 			app.UseWebApi(webApiServer);
 		}

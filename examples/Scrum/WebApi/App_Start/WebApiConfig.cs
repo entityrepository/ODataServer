@@ -22,6 +22,13 @@ namespace Scrum.WebApi
 
 		internal const string ODataRoute = "odata";
 
+		/// <summary>
+		/// IIS Web API configuration
+		/// </summary>
+		/// <param name="config"></param>
+		/// <remarks>
+		/// Don't call this method from OWIN - instead call <see cref="ConfigureODataService"/>.
+		/// </remarks>
 		public static void Register(HttpConfiguration config)
 		{
 #if DEBUG
@@ -31,13 +38,14 @@ namespace Scrum.WebApi
 			// Ensures that this works with other attribute API routes
 			config.MapHttpAttributeRoutes();
 
-			ConfigureODataService(config);
+			// Note: GlobalConfiguration.DefaultServer requires IIS
+			ConfigureODataService(config, GlobalConfiguration.DefaultServer);
 		}
 
-		internal static void ConfigureODataService(HttpConfiguration config)
+		internal static void ConfigureODataService(HttpConfiguration webApiConfig, HttpServer webApiServer)
 		{
 			// Configure OData controllers
-			var oDataServerConfigurer = new ODataServerConfigurer(config);
+			var oDataServerConfigurer = new ODataServerConfigurer(webApiConfig);
 
 			// Just to prove that regular controller classes can be added when customization is needed
 			// However, this isn't needed, b/c the dependency injector normally picks up all controllers in the assembly.
@@ -47,10 +55,10 @@ namespace Scrum.WebApi
 			oDataServerConfigurer.AddStandardEntitySetControllers(DbSetControllerSelector);
 
 			// TODO: Remove this - using to compare ODataConventionModelBuilder's EDM to what EF creates.
-			var odataModelBuilder = new ODataConventionModelBuilder(config);
+			var odataModelBuilder = new ODataConventionModelBuilder(webApiConfig);
 			odataModelBuilder.ConfigureFromContainer(oDataServerConfigurer.ContainerMetadata);
 
-			oDataServerConfigurer.ConfigureODataRoutes(config.Routes, "ODataRoute", ODataRoute, GlobalConfiguration.DefaultServer,
+			oDataServerConfigurer.ConfigureODataRoutes(webApiConfig.Routes, "ODataRoute", ODataRoute, webApiServer,
 				// TODO: Remove this arg
 				odataModelBuilder.GetEdmModel());
 		}
