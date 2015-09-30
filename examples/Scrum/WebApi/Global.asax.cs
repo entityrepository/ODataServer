@@ -26,7 +26,7 @@ namespace Scrum.WebApi
 			FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
 
 			// DI config
-			var container = new Container(new ContainerOptions() { AllowOverridingRegistrations = true });
+			var container = new Container { Options = { AllowOverridingRegistrations = true } };
 			container.RegisterModules(new ODataServiceModule(), new AppModule());
 
 			// Web API config

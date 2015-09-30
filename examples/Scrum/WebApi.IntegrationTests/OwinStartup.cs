@@ -1,20 +1,15 @@
-﻿// // -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="OwinStartup.cs" company="EntityRepository Contributors" year="2013">
 // This software is part of the EntityRepository library
-// Copyright © 2012 EntityRepository Contributors
+// Copyright © 2012-2015 EntityRepository Contributors
 // http://entityrepository.codeplex.org/
 // </copyright>
 // -----------------------------------------------------------------------
-
 
 using System.Linq;
 using System.Web.Http;
 using EntityRepository.ODataServer.Ioc;
 using LogJam.Config;
-using LogJam.Trace;
-using LogJam.Trace.Config;
-using LogJam.Trace.Switches;
-using Microsoft.Owin;
 using Owin;
 using SimpleInjector;
 using SimpleInjector.Integration.WebApi;
@@ -46,7 +41,7 @@ namespace Scrum.WebApi.IntegrationTests
 #endif
 
 			// DependencyInjection config
-			var diContainer = new Container(new ContainerOptions() { AllowOverridingRegistrations = true });
+			var diContainer = new Container { Options = { AllowOverridingRegistrations = true } };
 			diContainer.RegisterModules(new ODataServiceModule(), new AppModule());
 
 			// Configure logging
@@ -69,7 +64,7 @@ namespace Scrum.WebApi.IntegrationTests
 		{
 			owinAppBuilder.UseOwinTracerLogging();
 
-			diContainer.RegisterSingle(owinAppBuilder.GetTracerFactory());
+			diContainer.RegisterSingleton(owinAppBuilder.GetTracerFactory());
 
 			ILogWriterConfig[] configuredLogWriters = owinAppBuilder.GetLogManagerConfig().Writers.ToArray();
 			owinAppBuilder.TraceTo(configuredLogWriters);
