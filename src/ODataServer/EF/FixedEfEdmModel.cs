@@ -795,18 +795,6 @@ namespace EntityRepository.ODataServer.EF
 
 		}
 
-
-		private class EdmPropertyWrapper : IEdmProperty
-		{
-
-
-			public string Name { get; }
-
-			public EdmPropertyKind PropertyKind { get; }
-			public IEdmTypeReference Type { get; }
-			public IEdmStructuredType DeclaringType { get; }
-
-		}
 	}
 
 }
