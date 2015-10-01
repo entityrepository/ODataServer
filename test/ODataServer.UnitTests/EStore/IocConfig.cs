@@ -1,11 +1,10 @@
-﻿// // -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="IocConfig.cs" company="EntityRepository Contributors" year="2013">
 // This software is part of the EntityRepository library
 // Copyright © 2012-2015 EntityRepository Contributors
 // http://entityrepository.codeplex.org/
 // </copyright>
 // -----------------------------------------------------------------------
-
 
 using System.Web.Http.OData.Query;
 using EntityRepository.ODataServer.EF;
@@ -34,11 +33,11 @@ namespace EntityRepository.ODataServer.UnitTests.EStore
 			container.AddRegistration(typeof(IContainerMetadata<EStoreDb>), mmRegistration);
 
 			// Query validation settings could be specified here
-			container.RegisterSingle(new ODataValidationSettings()
-			{
-				MaxExpansionDepth = 5,
-				MaxTop = 200
-			});
+			container.RegisterSingleton(new ODataValidationSettings()
+			                            {
+				                            MaxExpansionDepth = 5,
+				                            MaxTop = 200
+			                            });
 		}
 
 	}

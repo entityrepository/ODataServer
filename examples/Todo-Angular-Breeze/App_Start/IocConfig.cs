@@ -33,12 +33,12 @@ namespace ODataBreezejsSample
 			container.RegisterLazy<TodoListContext>();
 
 			// Required: Register global datamodel metadata (IContainerMetadata and IContainerMetadata<DbContext>)
-			var mmRegistration = Lifestyle.Singleton.CreateRegistration<DbContextMetadata<TodoListContext>>(container);
+			var mmRegistration = Lifestyle.Singleton.CreateRegistration(() => new DbContextMetadata<TodoListContext>(new TodoListContext()), container);
 			container.AddRegistration(typeof(IContainerMetadata), mmRegistration);
 			container.AddRegistration(typeof(IContainerMetadata<TodoListContext>), mmRegistration);
-
+			
 			// Query validation settings could be specified here
-			container.RegisterSingle(new ODataValidationSettings()
+			container.RegisterSingleton(new ODataValidationSettings()
 			{
 				MaxExpansionDepth = 5
 			});

@@ -11,7 +11,7 @@ namespace ODataBreezejsSample
     public partial class Startup
     {
 
-		private Container _container = new Container(new ContainerOptions() { AllowOverridingRegistrations = true });
+	    private Container _container = new Container { Options = { AllowOverridingRegistrations = true } };
 
 		public void Configuration(IAppBuilder owinAppBuilder)
         {
@@ -24,6 +24,7 @@ namespace ODataBreezejsSample
 			webApiConfig.EnableSystemDiagnosticsTracing();
 #endif
 			webApiConfig.DependencyResolver = new SimpleInjectorWebApiDependencyResolver(_container);
+			_container.EnableHttpRequestMessageTracking(webApiConfig);
 			HttpServer webApiServer = new HttpServer(webApiConfig);
 			EntityRepositoryConfig.ConfigureODataService(webApiServer);
 

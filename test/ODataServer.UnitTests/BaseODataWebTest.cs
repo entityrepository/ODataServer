@@ -75,7 +75,7 @@ namespace EntityRepository.ODataServer.UnitTests
 		{
 
 			// Setup the DI container
-			Container container = new Container(new ContainerOptions() { AllowOverridingRegistrations = true });
+			Container container = new Container { Options = { AllowOverridingRegistrations = true } };
 			container.RegisterModules(new ODataServiceModule(), iocModule);
 
 			var testServer = TestServer.Create(owinAppBuilder => ConfigureOwinPipeline(owinAppBuilder, container, odataConfigAction));

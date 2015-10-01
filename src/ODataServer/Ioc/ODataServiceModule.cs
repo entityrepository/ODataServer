@@ -28,20 +28,20 @@ namespace EntityRepository.ODataServer.Ioc
 		/// <param name="container">A <see cref="Container"/>.</param>
 		public void RegisterServices(Container container)
 		{
-			container.RegisterOpenGeneric(typeof(ReadOnlyDbSetController<,,>), typeof(ReadOnlyDbSetController<,,>));
-			container.RegisterOpenGeneric(typeof(EditDbSetController<,,>), typeof(EditDbSetController<,,>));
+			container.Register(typeof(ReadOnlyDbSetController<,,>), typeof(ReadOnlyDbSetController<,,>));
+			container.Register(typeof(EditDbSetController<,,>), typeof(EditDbSetController<,,>));
 
-			container.Register<EntityRepositoryMetadataController>();
+			container.RegisterWebApiRequest<EntityRepositoryMetadataController>();
 
 			// Default query validation settings (can be overridden)
-			container.RegisterSingle(new ODataValidationSettings
+			container.RegisterSingleton(new ODataValidationSettings
 			                         {
 				                         MaxExpansionDepth = 15,
 				                         MaxTop = 200
 			                         }); //.Named<ODataValidationSettings>("Edit");  TODO: Figure out how to separate ODataValidationSettings for Edit controllers vs ReadOnly controllers
 
 			// Default query settings (can be overridden)
-			container.RegisterSingle(new ODataQuerySettings()
+			container.RegisterSingleton(new ODataQuerySettings()
 			                         {
 				                         PageSize = 200
 			                         });
